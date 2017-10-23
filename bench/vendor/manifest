@@ -1,0 +1,30 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/PuerkitoBio/goquery",
+			"repository": "https://github.com/PuerkitoBio/goquery",
+			"revision": "ce645ea5e67a713599b7415f21f0786451fa9554",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/andybalholm/cascadia",
+			"repository": "https://github.com/andybalholm/cascadia",
+			"revision": "349dd0209470eabd9514242c688c403c0926d266",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/marcw/cachecontrol",
+			"repository": "https://github.com/marcw/cachecontrol",
+			"revision": "30341fe9a7d531c7bc6414af55ceb59b9e61499a",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/net/html",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "1c05540f6879653db88113bc4a2b70aec4bd491f",
+			"branch": "master",
+			"path": "/html"
+		}
+	]
+}
