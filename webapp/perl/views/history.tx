@@ -1,0 +1,32 @@
+: cascade base
+: around content -> {
+
+<div id="history">
+: for $messages -> $msg {
+  <div class="media message">
+    <img class="avatar d-flex align-self-start mr-3" src="/icons/<: $msg.user.avatar_icon :>" alt="no avatar">
+    <div class="media-body">
+      <h5 class="mt-0"><a href="/profile/<: $msg.user.name :>"><: $msg.user.display_name :>@<: $msg.user.name :></a></h5>
+      <p class="content"><: $msg.content :></p>
+      <p class="message-date"><: $msg.date :></p>
+    </div>
+  </div>
+: }
+</div>
+
+<nav>
+  <ul class="pagination">
+: if 1 < $page {
+    <li><a href="/history/<: $channel_id :>?page=<: $page - 1 :>"><span>«</span></a></li>
+: }
+: for [1..$max_page] -> $p {
+  <: if $page == $p { :> <li class="active"> <: } else { :> <li> <: } :>
+        <a href="/history/<: $channel_id :>?page=<: $p :>"><: $p :></a></li>
+: }
+: if $page < $max_page {
+    <li><a href="/history/<: $channel_id :>?page=<: $page + 1 :>"><span>»</span></a></li>
+: }
+  </ul>
+</nav>
+
+: }

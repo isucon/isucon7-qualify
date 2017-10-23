@@ -1,0 +1,31 @@
+{{- define "history" -}}
+{{- template "header" . -}}
+<div id="history">
+  {{range .Messages}}
+	<div class="media message">
+		<img class="avatar d-flex align-self-start mr-3" src="/icons/{{.user.AvatarIcon}}" alt="no avatar">
+		<div class="media-body">
+			<h5 class="mt-0"><a href="/profile/{{.user.Name}}">{{.user.DisplayName}}@{{.user.Name}}</a></h5>
+			<p class="content">{{.content}}</p>
+      <p class="message-date">{{.date}}</p>
+		</div>
+	</div>
+  {{end}}
+</div>
+
+<nav>
+  <ul class="pagination">
+    {{ if ne .Page 1 }}
+    <li><a href="/history/{{.ChannelID}}?page={{add .Page -1}}"><span>«</span></a></li>
+    {{ end }}
+    {{ range $p := xrange 1 .MaxPage }}
+      {{ if eq $p $.Page }}<li class="active">{{ else }}<li>{{ end }}
+      <a href="/history/{{$.ChannelID}}?page={{ $p  }}">{{ $p }}</a></li>
+    {{ end }}
+    {{ if ne .Page .MaxPage }}
+      <li><a href="/history/{{.ChannelID}}?page={{add .Page 1}}"><span>»</span></a></li>
+    {{ end }}
+  </ul>
+</nav>
+{{- template "footer" . -}}
+{{- end -}}

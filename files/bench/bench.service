@@ -1,0 +1,14 @@
+[Unit]
+Description = isucon7 benchmark application
+
+[Service]
+WorkingDirectory=/home/ubuntu/bench
+ExecStart = /home/ubuntu/bench/bin/bench -workermode -portal https://portal.isu.k0y.org
+
+Restart   = always
+Type      = simple
+User      = ubuntu
+Group     = ubuntu
+
+[Install]
+WantedBy = multi-user.target

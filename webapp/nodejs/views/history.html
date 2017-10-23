@@ -1,0 +1,29 @@
+<% extend "base.html" %>
+
+<div id="history">
+  <% for msg in @messages : %>
+	<div class="media message">
+		<img class="avatar d-flex align-self-start mr-3" src="/icons/<%= msg.user.avatar_icon %>" alt="no avatar">
+		<div class="media-body">
+			<h5 class="mt-0"><a href="/profile/<%= msg.user.name %>"><%= msg.user.display_name %>@<%= msg.user.name %></a></h5>
+			<p class="content"><%= msg.content %></p>
+      <p class="message-date"><%= msg.date %></p>
+		</div>
+	</div>
+  <% end %>
+</div>
+
+<nav>
+  <ul class="pagination">
+    <% if @page > 1 : %>
+    <li><a href="/history/<%= @channelId %>?page=<%= @page-1 %>"><span>«</span></a></li>
+    <% end %>
+    <% for p in [1..Math.max(@maxPage, 1)] : %>
+    <% if @page == p : %> <li class="active"> <% else : %> <li> <% end %>
+        <a href="/history/<%= @channelId %>?page=<%= p %>"><%= p %></a></li>
+      <% end %>
+      <% if @page < @maxPage : %>
+      <li><a href="/history/<%= @channelId %>?page=<%= @page+1 %>"><span>»</span></a></li>
+    <% end %>
+  </ul>
+</nav>

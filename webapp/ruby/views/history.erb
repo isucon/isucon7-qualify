@@ -1,0 +1,27 @@
+<div id="history">
+  <% @messages.each do |msg| %>
+	<div class="media message">
+		<img class="avatar d-flex align-self-start mr-3" src="/icons/<%= msg['user']['avatar_icon'] %>" alt="no avatar">
+		<div class="media-body">
+			<h5 class="mt-0"><a href="/profile/<%= msg['user']['name'] %>"><%= msg['user']['display_name'] %>@<%= msg['user']['name'] %></a></h5>
+			<p class="content"><%= msg['content'] %></p>
+      <p class="message-date"><%= msg['date'] %></p>
+		</div>
+	</div>
+  <% end %>
+</div>
+
+<nav>
+  <ul class="pagination">
+    <% if 1 < @page %>
+    <li><a href="/history/<%= @channel_id %>?page=<%= @page - 1 %>"><span>«</span></a></li>
+    <% end %>
+    <% 1.upto(@max_page) do |p| %>
+    <% if @page == p %> <li class="active"> <% else %> <li> <% end %>
+        <a href="/history/<%= @channel_id %>?page=<%= p %>"><%= p %></a></li>
+      <% end %>
+      <% if @page < @max_page %>
+      <li><a href="/history/<%= @channel_id %>?page=<%= @page + 1 %>"><span>»</span></a></li>
+      <% end %>
+  </ul>
+</nav>

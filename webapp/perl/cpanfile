@@ -1,0 +1,6 @@
+requires "Kossy";
+requires "DBIx::Sunny";
+requires "DBD::mysql";
+requires "Plack::Middleware::Session::Cookie";
+requires "DateTime::Format::MySQL";
+requires "Starlet";

@@ -1,0 +1,116 @@
+.cover {
+  padding: 0 1.5rem;
+}
+.cover .btn-lg {
+  padding: .75rem 1.25rem;
+  font-weight: bold;
+}
+
+.cover-container {
+  vertical-align: middle;
+  width: 100%;
+}
+
+body {
+  padding-top: 50px;
+  background-color: white;
+}
+
+.sidebar {
+  position: fixed;
+  top: 57px;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 0px 0px 90px 0px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-right: 1px solid #eee;
+  background-color: #eee;
+}
+
+#chatbox-frame {
+  position: fixed;
+  background-color: white;
+  bottom: 0;
+  padding-bottom: 25px;
+}
+
+.chatbox {
+  background-color: white;
+  height: 60px;
+  bottom: 0;
+  padding-bottom: 10px;
+}
+
+.chatbox textarea {
+  resize: none;
+}
+
+#timeline {
+  padding-top: 60px;
+  padding-bottom: 80px;
+}
+
+div.message {
+  margin: 0px;
+  border-bottom: 1px solid lightgray;
+}
+
+img.avatar-lg {
+	width: 500px;
+}
+
+div.message img.avatar {
+  border-radius: .25rem;
+  width: 100px;
+}
+
+p.message-date {
+  text-align: right;
+  padding-right: 20px;
+  color: gray;
+  margin-bottom:0.2em;
+}
+
+a.navbar-brand {
+  text-transform: lowercase;
+  letter-spacing: 0.7em;
+  color: #cc99ff !important;
+}
+
+a.navbar-brand:before {
+  content:"#";
+  color: #eee;
+}
+
+.sidebar .nav-pills .nav-item .nav-link {
+  border-radius: 0px !important;
+  border-top: 1px solid gray;
+  border-bottom: 1px solid black;
+  background-color: #595b5c;
+  color: #f0f0f0;
+}
+
+.sidebar .nav-pills .nav-item .nav-link:hover {
+  background-color: #f0f0f0;
+  color: #595b5c;
+}
+
+div.well {
+  border-bottom: 1px solid black;
+  background-color: #696b6c;
+  color: #f0f0f0;
+  position: fixed;
+  width: 100%;
+  padding-top: 0.5em;
+  padding-right: 1em;
+  padding-bottom: 0.5em;
+  padding-left: 1em;
+}
+
+.row main {
+  padding-top: 7px !important;
+  padding-left: 0px;
+}
+

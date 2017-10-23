@@ -1,0 +1,40 @@
+{% extends "base.twig" %}
+
+{% block content %}
+
+  {% if self_profile %}
+
+    <form action="/profile" method="post" enctype="multipart/form-data">
+      <div class="form-group row">
+        <label class="col-sm-2 col-form-label">ユーザ名</label>
+        <div class="col-sm-10"> <p>{{ user.name }}</p> </div>
+
+        <label class="col-sm-2 col-form-label">表示名</label>
+        <div class="col-sm-10"> <input type="text" class="form-control" name="display_name" placeholder="表示名" value= "{{ user.display_name }}"> </div>
+
+        <label class="col-sm-2 col-form-label">アイコン</label>
+        <div class="col-sm-10"> <input type="file" name="avatar_icon"></input> </div>
+
+        <div class="col-sm-2"></div>
+        <div class="col-sm-10"> <img class="avatar-lg" src="/icons/{{ user.avatar_icon }}" alt="no avatar"> </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">更新</button>
+    </form>
+
+  {% else %}
+
+    <div class="form-group row">
+      <label class="col-sm-2 col-form-label">ユーザ名</label>
+      <div class="col-sm-10"> <p>{{ user.name }}</p> </div>
+
+      <label class="col-sm-2 col-form-label">表示名</label>
+      <div class="col-sm-10"> <p>{{ user.display_name }}</p> </div>
+
+      <label class="col-sm-2 col-form-label">アイコン</label>
+      <div class="col-sm-10"> <img class="avatar-lg" src="/icons/{{ user.avatar_icon }}" alt="no avatar"> </div>
+    </div>
+
+  {% endif %}
+
+{% endblock %}

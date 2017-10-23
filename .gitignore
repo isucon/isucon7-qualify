@@ -1,0 +1,9 @@
+.DS_Store
+*.swp
+*.swo
+*.pyc
+.idea/
+webapp/php/vendor
+bench/isucon7q-initial-dataset.sql.gz
+bench/result.json
+webapp/perl/local
