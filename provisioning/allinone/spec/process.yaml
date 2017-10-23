@@ -1,0 +1,7 @@
+process:
+  mysqld:
+    running: true
+  nginx:
+    running: true
+  sshd:
+    running: true

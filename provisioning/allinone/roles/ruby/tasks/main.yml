@@ -1,0 +1,50 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Check Installed Ruby
+  command: /home/isucon/local/ruby/bin/ruby -e "puts RUBY_VERSION"
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  register: ruby_version_output
+  changed_when: ruby_version_output|failed
+  ignore_errors: True
+
+- name: Debug ruby_version_output
+  debug:
+    var: ruby_version_output
+
+- name: Install Ruby
+  command: /home/isucon/xbuild/ruby-install 2.4.2 /home/isucon/local/ruby
+  args:
+    chdir: /home/isucon
+  environment:
+    MAKEFLAGS: "-j {{ cpu_num.stdout }}"
+  become: yes
+  become_user: isucon
+  when: ruby_version_output|failed or ruby_version_output.stdout != "2.4.2"
+
+- name: Install Dependencies
+  command: bundle install
+  args:
+    chdir: /home/isucon/isubata/webapp/ruby
+  environment:
+    PATH: /home/isucon/local/ruby/bin/:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: bundle_install_deps_output
+  changed_when: bundle_install_deps_output
+
+- name: Copy isubata.ruby unit file
+  copy:
+    src: etc/systemd/system/isubata.ruby.service
+    dest: /etc/systemd/system/isubata.ruby.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - daemon-reload
+
+

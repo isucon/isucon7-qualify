@@ -1,0 +1,49 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Check Installed Perl
+  command: /home/isucon/local/perl/bin/perl -V:version
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  register: perl_version_output
+  changed_when: perl_version_output|failed
+  ignore_errors: True
+
+- name: Debug perl_version_output
+  debug:
+    var: perl_version_output
+
+- name: Install Perl
+  command: /home/isucon/xbuild/perl-install 5.26.1 /home/isucon/local/perl
+  args:
+    chdir: /home/isucon
+  environment:
+    MAKEFLAGS: "-j {{ cpu_num.stdout }}"
+  become: yes
+  become_user: isucon
+  when: perl_version_output|failed or perl_version_output.stdout != "version='5.26.1';"
+
+- name: Install Dependencies
+  command: carton install
+  args:
+    chdir: /home/isucon/isubata/webapp/perl
+  environment:
+    PATH: /home/isucon/local/perl/bin/:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: carton_install_deps_output
+  changed_when: carton_install_deps_output
+
+- name: Copy isubata.perl unit file
+  copy:
+    src: etc/systemd/system/isubata.perl.service
+    dest: /etc/systemd/system/isubata.perl.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - daemon-reload
+

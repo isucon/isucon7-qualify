@@ -1,0 +1,14 @@
+service:
+  sshd:
+    enabled: true
+    running: true
+  nginx:
+    enabled: true
+    running: true
+  isubata.python:
+    enabled: true
+    running: true
+  mysql:
+    enabled: true
+    running: true
+

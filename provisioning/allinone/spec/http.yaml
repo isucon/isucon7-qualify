@@ -1,0 +1,6 @@
+http:
+  http://127.0.0.1:
+    status: 200
+    timeout: 1000
+    body: ["Isubata は世界最速のチャットアプリケーションです。"]
+

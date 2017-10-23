@@ -1,0 +1,14 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: yokogawa/ansible-lint
+    working_directory: ~/isucon/
+
+    steps:
+      - checkout
+
+      - run:
+          name: Run ansible lint
+          command: git ls-files -z provisioning/*.yml | xargs -0 -r ansible-lint --force-color -x ANSIBLE0016

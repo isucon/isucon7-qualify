@@ -1,0 +1,49 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Check Installed Node.js
+  command: /home/isucon/local/node/bin/node --version
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  register: nodejs_version_output
+  changed_when: nodejs_version_output|failed
+  ignore_errors: True
+
+- name: Debug nodejs_version_output
+  debug:
+    var: nodejs_version_output
+
+- name: Install Node.js
+  command: /home/isucon/xbuild/node-install v6.11.4 /home/isucon/local/node
+  args:
+    chdir: /home/isucon
+  environment:
+    MAKEFLAGS: "-j {{ cpu_num.stdout }}"
+  become: yes
+  become_user: isucon
+  when: nodejs_version_output|failed or nodejs_version_output.stdout != "v6.11.4"
+
+- name: Install Dependencies
+  command: npm install
+  args:
+    chdir: /home/isucon/isubata/webapp/nodejs
+  environment:
+    PATH: /home/isucon/local/node/bin/:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: npm_install_deps_output
+  changed_when: npm_install_deps_output
+
+- name: Copy isubata.nodejs unit file
+  copy:
+    src: etc/systemd/system/isubata.nodejs.service
+    dest: /etc/systemd/system/isubata.nodejs.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - daemon-reload
+

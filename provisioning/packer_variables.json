@@ -1,0 +1,6 @@
+{
+    "ssh_host": "127.0.0.1",
+    "ssh_username": "ubuntu",
+    "ssh_port": "2222",
+    "ssh_private_key_file": "./misc/debugvm/.vagrant/machines/default/virtualbox/private_key"
+}

@@ -1,0 +1,20 @@
+file:
+  /etc/passwd:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: root
+    filetype: file
+    contains:
+      - "/^sshd:/"
+      - "/^ubuntu:/"
+      - "/^isucon:/"
+      - "/^mysql:/"
+  /etc/hosts:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: root
+    filetype: file
+    contains: 
+      - "127.0.0.1       localhost"

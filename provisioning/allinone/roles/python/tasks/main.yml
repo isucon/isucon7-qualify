@@ -1,0 +1,56 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Check Installed Python
+  command: /home/isucon/local/python/bin/python -V
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  register: python_version_output
+  changed_when: python_version_output|failed
+  ignore_errors: True
+
+- name: Debug python_version_output
+  debug:
+    var: python_version_output
+
+- name: Install Python
+  command: /home/isucon/xbuild/python-install 3.6.3 ~/local/python
+  args:
+    chdir: /home/isucon
+  environment:
+    MAKEFLAGS: "-j {{ cpu_num.stdout }}"
+  become: yes
+  become_user: isucon
+  when: python_version_output|failed or python_version_output.stdout != "Python 3.6.3"
+
+- name: Install Dependencies
+  command: pip install
+  args:
+    chdir: /home/isucon/isubata/webapp/python
+  environment:
+    PATH: /home/isucon/local/python/bin/:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: pip_install_deps_output
+  changed_when: pip_install_deps_output
+
+- name: Copy isubata.python unit file
+  copy:
+    src: etc/systemd/system/isubata.python.service
+    dest: /etc/systemd/system/isubata.python.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - daemon-reload
+
+- name: Enable and start isubata.python
+  systemd:
+    name: isubata.python
+    state: started
+    daemon_reload: yes
+    enabled: yes
+
