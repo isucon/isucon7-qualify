@@ -18,11 +18,21 @@ files   - 各種設定ファイル
 
 Ubuntu 16.04 のものをなるべくデフォルトで使います。
 
+まずは `isucon` ユーザーを作り、そのホームディレクトリ配下の `isubata` ディレクトリに
+リポジトリをチェックアウトします。
+
+```console
+$ sudo apt install git
+$ git clone https://github.com/isucon/isucon7-qualify.git isubata
+```
+
+nginx と MySQL は Ubuntu の標準のものを使います。
+
 ```
 $ sudo apt install mysql-server nginx
 ```
 
-xbuild で必要なもの
+各言語は xbuild で最新安定版をインストールします。まず xbuild が必要とするライブラリをインストールします。
 
 ```
 $ sudo apt install -y git curl libreadline-dev pkg-config autoconf automake build-essential libmysqlclient-dev \
@@ -31,10 +41,11 @@ $ sudo apt install -y git curl libreadline-dev pkg-config autoconf automake buil
 	libmhash-dev libmcrypt-dev libgd-dev libtidy-dev
 ```
 
-xbuild. Goを使わない場合でもベンチマーカーのためにGoはインストールしてください。
+xbuildで言語をインストールします。ベンチマーカーのために、Goは必ずインストールしてください。
+他の言語は使わないのであればスキップしても問題ないと思います。
 
 ```
-cd /home/isucon
+cd
 git clone git@github.com:tagomoris/xbuild.git
 
 mkdir local
