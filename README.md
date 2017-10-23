@@ -46,7 +46,7 @@ xbuildで言語をインストールします。ベンチマーカーのため�
 
 ```
 cd
-git clone git@github.com:tagomoris/xbuild.git
+git clone https://github.com/tagomoris/xbuild.git
 
 mkdir local
 xbuild/ruby-install   -f 2.4.2   /home/isucon/local/ruby
