@@ -10,11 +10,33 @@ file:
       - "/^ubuntu:/"
       - "/^isucon:/"
       - "/^mysql:/"
-  /etc/hosts:
+  /etc/systemd/system/isubata.python.service:
     exists: true
     mode: "0644"
     owner: root
     group: root
     filetype: file
-    contains: 
-      - "127.0.0.1       localhost"
+  /etc/systemd/system/isubata.golang.service:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: root
+    filetype: file
+  /etc/systemd/system/isubata.nodejs.service:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: root
+    filetype: file
+  /etc/systemd/system/isubata.perl.service:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: root
+    filetype: file
+  /etc/systemd/system/isubata.php.service:
+    exists: true
+    mode: "0644"
+    owner: root
+    group: root
+    filetype: file

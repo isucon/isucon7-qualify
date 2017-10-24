@@ -11,7 +11,3 @@ port:
     listening: true
     ip:
       - 127.0.0.1
-  tcp:5000:
-    listening: true
-    ip:
-      - 127.0.0.1

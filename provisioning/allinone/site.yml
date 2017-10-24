@@ -12,10 +12,10 @@
     - common
     - bench
     - golang
-    - nodejs
-    - perl
-    - php
-    - python
-    - ruby
+#   - nodejs
+#   - perl
+#   - php
+#   - python
+#   - ruby
     - mysql
     - nginx

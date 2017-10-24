@@ -2,6 +2,7 @@
 # vi: set ft=ruby ts=2 sw=2 sts=0 et :
 # ref.
 #   https://github.com/matsuu/ansible-isucon
+#   https://github.com/matsuu/vagrant-isucon
 
 $disable_unattended_upgrades =<<-SCRIPT
 echo "-- Disabling unattended upgrades --"
@@ -23,12 +24,14 @@ echo '-- Finish base packages setup --'
 SCRIPT
 
 $setup_quarifier_environment =<<-SCRIPT
+set -e
 echo "-- ISUCON7 quarifier setup --"
 export DEBIAN_FRONTEND="noninteractive"
-apt-get -y install ansible
+apt-get -y install python-pip
+pip install ansible
 (
   cd /tmp/ansible/
-  PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ansible-playbook -i local /tmp/ansible/site.yml
+  PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ansible-playbook -i localhost, -c local /tmp/ansible/site.yml
 )
 echo '-- Finish quarifier setup --'
 SCRIPT
@@ -36,12 +39,14 @@ SCRIPT
 Vagrant.configure(2) do |config|
   config.vm.box = "ubuntu/xenial64"
   config.vm.provider "virtualbox" do |vm|
-    vm.name = "isucon7-quarifier"
-    vm.memory = "1024"
+    vm.name   = "isucon7-quarifier"
+    vm.cpus   = 2
+    vm.memory = 2048
   end
+  config.vm.hostname = "isucon7-quarifier"
 
   config.vm.provision :shell, inline: $disable_unattended_upgrades
-  config.vm.provision :file,  source: "./misc/sakura_ubuntu_package.list", destination: "/tmp/sakura_ubuntu_package.list"
+  config.vm.provision :file,  source: "../misc/sakura_ubuntu_package.list", destination: "/tmp/sakura_ubuntu_package.list"
   config.vm.provision :shell, inline: $setup_basepkg
   config.vm.provision :file,  source: "./roles/", destination: "/tmp/ansible/roles"
   config.vm.provision :file,  source: "./site.yml", destination: "/tmp/ansible/site.yml"

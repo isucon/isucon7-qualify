@@ -22,6 +22,10 @@
     "source_path": "./misc/create-ova/ubuntu1604.ova",
     "ssh_username": "ubuntu",
     "ssh_password": "ubuntu",
+    "vboxmanage": [
+      ["modifyvm", "{{.Name}}", "--memory", "2048"],
+      ["modifyvm", "{{.Name}}", "--cpus", "2"]
+    ],
     "headless": true,
     "output_directory": "packer-{{user `target`}}",
     "vm_name": "{{user `target`}}",

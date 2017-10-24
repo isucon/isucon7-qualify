@@ -32,6 +32,9 @@ build-allinone-null: ## build a Qualifier Server with benchmark program by null 
 build-allinone-vagrant: create-ova ## build a Qualifier with benchmark program Server Vagrant Box
 	packer build -only=virtualbox-ovf $(PACKER_DEBUG) $(ALLINONE_SERVER_MANIFEST)
 
+build-allinone-sakura-tk1a: ## build a Qualifier with benchmark program Server Archive for SAKURA Cloud
+	packer build -only=sakura-tk1a $(PACKER_DEBUG) $(ALLINONE_SERVER_MANIFEST)
+
 build-bench-null: ## build a Bench Server by null - ssh and provisioning only (for debug)
 	packer build -only=null -var-file=$(PACKER_VARIABLES_FILE) $(PACKER_DEBUG) $(BUILD_SERVER_MANIFEST)
 

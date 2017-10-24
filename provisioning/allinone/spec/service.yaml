@@ -8,6 +8,21 @@ service:
   isubata.python:
     enabled: true
     running: true
+  isubata.golang:
+    enabled: false
+    running: false
+  isubata.nodejs:
+    enabled: false
+    running: false
+  isubata.perl:
+    enabled: false
+    running: false
+  isubata.php:
+    enabled: false
+    running: false
+  isubata.ruby:
+    enabled: false
+    running: false
   mysql:
     enabled: true
     running: true
