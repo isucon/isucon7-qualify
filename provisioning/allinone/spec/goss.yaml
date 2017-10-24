@@ -1,0 +1,9 @@
+gossfile:
+  addr.yaml: {}
+  file.yaml: {}
+  http.yaml: {}
+  package.yaml: {}
+  port.yaml: {}
+  process.yaml: {}
+  service.yaml: {}
+  user.yaml: {}

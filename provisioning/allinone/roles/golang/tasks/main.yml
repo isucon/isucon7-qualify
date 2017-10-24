@@ -1,0 +1,53 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Check Installed dep
+  command: /home/isucon/go/bin/dep version
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  register: dep_version_output
+  changed_when: dep_version_output|failed
+  ignore_errors: True
+
+- name: Debug dep_version_output
+  debug:
+    var: dep_version_output
+
+- name: Install dep
+  command: /home/isucon/local/go/bin/go get -u github.com/golang/dep/cmd/dep
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  when: dep_version_output|failed
+
+- name: Install Dependencies
+  command: /home/isucon/go/bin/dep ensure
+  args:
+    chdir: /home/isucon/isubata/webapp/go/src/isubata
+  environment:
+    GOPATH: /home/isucon/isubata/webapp/go/
+  become: yes
+  become_user: isucon
+
+- name: Install webapps
+  command: /home/isucon/local/go/bin/go build -v isubata
+  args:
+    chdir: /home/isucon/isubata/webapp/go/
+  environment:
+    GOPATH: /home/isucon/isubata/webapp/go/
+  become: yes
+  become_user: isucon
+
+- name: Copy isubata.golang unit file
+  copy:
+    src: etc/systemd/system/isubata.golang.service
+    dest: /etc/systemd/system/isubata.golang.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - daemon-reload

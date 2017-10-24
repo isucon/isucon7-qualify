@@ -1,0 +1,36 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Install Package
+  apt:
+    pkg: "{{ item }}"
+    state: installed
+  with_items:
+    - nginx
+
+# http://docs.ansible.com/ansible/latest/file_module.html
+- name: Disable default config
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Copy isubata Nginx config
+  copy:
+    src: etc/nginx/sites-available/{{ item }}
+    dest: /etc/nginx/sites-available/{{ item }}
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - nginx.conf
+    - nginx.php.conf
+
+- name: Enable isubata config
+  file:
+    path: /etc/nginx/sites-enabled/nginx.conf
+    src: /etc/nginx/sites-available/nginx.conf
+    state: link
+  notify:
+    - reload nginx
+

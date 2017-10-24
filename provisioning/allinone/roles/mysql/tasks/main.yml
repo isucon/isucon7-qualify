@@ -1,0 +1,84 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Install Package
+  apt:
+    pkg: "{{ item }}"
+    state: installed
+  with_items:
+    - mysql-server
+
+#- name: Change bind address
+#  lineinfile:
+#    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+#    regexp: '^bind-address(\s+)= 127\.0\.0\.1'
+#    line: 'bind-address\1= 0.0.0.0'
+#    backrefs: yes
+#  notify:
+#    - restart mysql
+
+- name: Enable and start mysql service
+  systemd:
+    name: mysql
+    state: started
+    daemon_reload: yes
+    enabled: yes
+
+# http://docs.ansible.com/ansible/latest/mysql_user_module.html
+#- name: Create MySQL isubata@localhost user
+#  mysql_user:
+#    name: isucon
+#    host: localhost
+#    password: isucon
+#    priv: "isubata.*:ALL"
+#    encrypted: no
+#    state: present
+#
+#- name: Create MySQL isubata@% user
+#  mysql_user:
+#    name: isucon
+#    host: "%"
+#    password: isucon
+#    priv: "isubata.*:ALL"
+#    encrypted: no
+#    state: present
+
+- name: Create MySQL isubata@localhost user
+  command: >
+    mysql -e "
+    DROP USER IF EXISTS isucon@'localhost';
+    CREATE USER isucon@'localhost' IDENTIFIED BY 'isucon';
+    GRANT ALL on *.* TO isucon@'localhost';
+    "
+  args:
+    chdir: /home/isucon/isubata/db/
+  become: yes
+  #when: isubata_repository.changed
+
+- name: Create MySQL isubata@% user
+  command: >
+    mysql -e "
+    DROP USER IF EXISTS isucon@'%';
+    CREATE USER isucon@'%' IDENTIFIED BY 'isucon';
+    GRANT ALL on *.* TO isucon@'%';
+    "
+  args:
+    chdir: /home/isucon/isubata/db/
+  become: yes
+  #when: isubata_repository.changed
+
+- name: Initialize database
+  command: /home/isucon/isubata/db/init.sh
+  args:
+    chdir: /home/isucon/isubata/db/
+  become: yes
+  #when: isubata_repository.changed
+
+- name: Import benchmark data
+  shell: zcat isucon7q-initial-dataset.sql.gz | mysql --default-character-set=utf8 isubata
+  args:
+    chdir: /home/isucon/isubata/bench/
+  become: yes
+  #when: isubata_repository.changed
+

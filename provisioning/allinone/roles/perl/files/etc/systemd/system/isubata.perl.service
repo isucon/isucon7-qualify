@@ -1,0 +1,16 @@
+[Unit]
+Description = isucon7 qualifier main application in perl
+
+[Service]
+WorkingDirectory=/home/isucon/isubata/webapp/perl
+EnvironmentFile=/home/isucon/env.sh
+
+ExecStart = /home/isucon/local/perl/bin/carton exec plackup -s Starlet -p 5000 app.psgi
+
+Restart   = always
+Type      = simple
+User      = isucon
+Group     = isucon
+
+[Install]
+WantedBy = multi-user.target

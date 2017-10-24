@@ -1,0 +1,62 @@
+{
+  "variables": {
+    "target": "allinone"
+  },
+  "builders":[{
+    "name": "sakura-tk1a",
+    "type": "sakuracloud",
+    "zone": "tk1a",
+    "os_type": "ubuntu",
+    "user_name": "ubuntu",
+    "password": "ubuntu",
+    "disable_virtio_net": false,
+    "archive_name": "{{user `target`}}-{{ timestamp }}",
+    "archive_tags": ["{{user `target`}}", "os-linux", "packer", "qualifier"],
+    "archive_description": "Archive for ISUCON 2017 qualifier {{user `target`}}",
+    "core": 4,
+    "memory_size": 4,
+    "disk_size": 20
+  },
+  {
+    "type": "virtualbox-ovf",
+    "source_path": "./misc/create-ova/ubuntu1604.ova",
+    "ssh_username": "ubuntu",
+    "ssh_password": "ubuntu",
+    "vboxmanage": [
+      ["modifyvm", "{{.Name}}", "--memory", "2048"],
+      ["modifyvm", "{{.Name}}", "--cpus", "2"]
+    ],
+    "headless": true,
+    "output_directory": "packer-{{user `target`}}",
+    "vm_name": "{{user `target`}}",
+    "format": "ova"
+  },
+  {
+    "type": "null",
+    "ssh_host": "{{user `ssh_host`}}",
+    "ssh_username": "{{user `ssh_username`}}",
+    "ssh_port": "{{user `ssh_port`}}",
+    "ssh_private_key_file": "{{user `ssh_private_key_file`}}"
+  }],
+  "provisioners": [
+    {   
+      "type": "shell",
+      "inline": [
+        "echo ubuntu | sudo -S bash -c 'echo \"ubuntu ALL=(ALL) NOPASSWD:ALL\" >/etc/sudoers.d/90-ubuntu-user'"
+      ],
+      "only": ["sakura-tk1a"]
+    },
+    {
+      "type": "ansible",
+      "playbook_file": "{{user `target`}}/site.yml"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "compression_level": 1,
+      "output": "{{user `target`}}-{{.BuildName}}.box",
+      "only": ["virtualbox-ovf"]
+    }
+  ]
+}

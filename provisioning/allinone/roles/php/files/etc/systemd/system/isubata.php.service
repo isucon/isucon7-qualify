@@ -1,0 +1,16 @@
+[Unit]
+Description = isucon7 qualifier main application in PHP
+
+[Service]
+WorkingDirectory=/home/isucon/isubata/webapp/php
+EnvironmentFile=/home/isucon/env.sh
+
+ExecStart = /home/isucon/local/php/sbin/php-fpm --fpm-config /home/isucon/local/php/etc/isubata.php-fpm.conf
+
+Restart   = always
+Type      = simple
+User      = isucon
+Group     = isucon
+
+[Install]
+WantedBy = multi-user.target

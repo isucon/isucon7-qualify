@@ -1,0 +1,13 @@
+port:
+  tcp:22:
+    listening: true
+    ip:
+      - 0.0.0.0
+  tcp:80:
+    listening: true
+    ip:
+      - 0.0.0.0
+  tcp:5000:
+    listening: true
+    ip:
+      - 127.0.0.1

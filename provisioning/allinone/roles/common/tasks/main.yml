@@ -1,0 +1,102 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Create isucon group
+  group:
+    name: isucon
+    gid: 1001
+    state: present
+    system: no
+
+- name: Create isucon user
+  user:
+    name: isucon
+    uid: 1001
+    group: isucon
+    password: isucon
+    home: /home/isucon
+    shell: /bin/bash
+    state: present
+    system: no
+
+- name: Add sudoers
+  copy:
+    content: "isucon  ALL=(ALL) NOPASSWD:ALL\n"
+    dest: /etc/sudoers.d/90-isucon-user
+    owner: root
+    group: root
+    mode: 0440
+
+- name: Setup xbuild
+  git:
+    repo: https://github.com/tagomoris/xbuild.git
+    dest: /home/isucon/xbuild
+    version: master
+  become: yes
+  become_user: isucon
+
+- name: Install Dependencies
+  apt:
+    pkg: "{{ item }}"
+    state: installed
+    update_cache: yes
+    cache_valid_time: 3600
+  become: yes
+  with_items:
+    - jq
+    - vim
+    - curl
+    - re2c
+    - bison
+    - gettext
+    - pkg-config
+    - autoconf
+    - build-essential
+    - libz-dev
+    - libbz2-dev
+    - liblzma-dev
+    - libssl-dev
+    - libmcrypt-dev
+    - libxml2-dev
+    - libsqlite3-dev
+    - libmysqlclient-dev
+    - libreadline-dev
+    - libxslt1-dev
+    - libcurl4-openssl-dev
+    - libjpeg-turbo8-dev
+    - libpng12-dev
+    - libtidy-dev
+
+- name: Get number of CPUs
+  command: nproc
+  become: no
+  register: cpu_num
+  changed_when: cpu_num|failed
+
+- name: Clone isubata
+  git:
+    repo: https://github.com/isucon/isucon7-qualify
+    dest: /home/isucon/isubata
+    version: master
+    update: yes
+  become: yes
+  become_user: isucon
+  register: isubata_repository
+
+- name: Copy env.sh
+  copy:
+    src: home/isucon/env.sh
+    dest: /home/isucon/env.sh
+    owner: isucon
+    group: isucon
+    mode: 0755
+
+- name: Download goss (server testing/validation tool)
+  get_url:
+    url: https://github.com/aelsabbahy/goss/releases/download/v0.3.5/goss-linux-amd64
+    dest: /usr/local/bin/goss
+    sha256sum: 5669df08e406abf594de0e7a7718ef389e5dc7cc76905e7f6f64711e6aad7fa3
+    mode: 0755
+  become: yes
+

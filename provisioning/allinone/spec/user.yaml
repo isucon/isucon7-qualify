@@ -1,0 +1,13 @@
+user:
+  ubuntu:
+    exists: true
+    uid: 1000
+    gid: 1000
+    home: /home/ubuntu
+    shell: /bin/bash
+  isucon:
+    exists: true
+    uid: 1001
+    gid: 1001
+    home: /home/isucon
+    shell: /bin/bash

@@ -1,0 +1,97 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Check Installed PHP
+  command: /home/isucon/local/php/bin/php -r 'echo phpversion();'
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  register: php_version_output
+  changed_when: php_version_output|failed
+  ignore_errors: True
+
+- name: Debug php_version_output
+  debug:
+    var: php_version_output
+
+- name: Install PHP
+  command: >
+    /home/isucon/xbuild/php-install 7.1.9 /home/isucon/local/php --
+    --with-pcre-regex --with-zlib --enable-fpm --enable-pdo
+    --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-openssl
+    --with-pcre-regex --with-pcre-dir --with-libxml-dir --enable-opcache
+    --enable-bcmath --with-bz2 --enable-calendar --enable-cli --enable-shmop
+    --enable-sysvsem --enable-sysvshm --enable-sysvmsg --enable-mbregex
+    --enable-mbstring --with-mcrypt --enable-pcntl --enable-sockets
+    --with-curl --enable-zip --with-pear
+  args:
+    chdir: /home/isucon
+  environment:
+    MAKEFLAGS: "-j {{ cpu_num.stdout }}"
+    # https://github.com/php-build/php-build/pull/323
+    PHPBUILD_EXTRA_MAKE_ARGUMENTS: "-j {{ cpu_num.stdout }}"
+  become: yes
+  become_user: isucon
+  when: php_version_output|failed or php_version_output.stdout != "7.1.9"
+
+- name: Check Installed Composer
+  command: composer version
+  args:
+    chdir: /home/isucon
+  environment:
+    PATH: "/home/isucon/local/php/bin/:{{ ansible_env.PATH }}"
+  become: yes
+  become_user: isucon
+  register: composer_version_output
+  changed_when: composer_version_output|failed
+  ignore_errors: True
+
+- name: Debug composer_version_output
+  debug:
+    var: composer_version_output
+
+- name: Install Composer
+  get_url:
+    url: https://getcomposer.org/download/1.5.2/composer.phar
+    dest: /home/isucon/local/php/bin/composer
+    sha256sum: c0a5519c768ef854913206d45bd360efc2eb4a3e6eb1e1c7d0a4b5e0d3bbb31f
+    mode: 0755
+  become: yes
+  become_user: isucon
+  when: composer_version_output|failed
+
+- name: Install Dependencies
+  command: composer install
+  args:
+    chdir: /home/isucon/isubata/webapp/php
+  environment:
+    PATH: /home/isucon/local/php/bin/:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: composer_install_deps_output
+  changed_when: composer_install_deps_output
+
+- name: Copy isubata.php unit file
+  copy:
+    src: etc/systemd/system/isubata.php.service
+    dest: /etc/systemd/system/isubata.php.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - daemon-reload
+
+- name: Copy php config
+  copy:
+    src: home/isucon/local/php/etc/{{ item }}
+    dest: /home/isucon/local/php/etc/{{ item }}
+    owner: isucon
+    group: isucon
+    mode: 0644
+  become: yes
+  with_items:
+    - isubata.php-fpm.conf
+    - php.ini
+

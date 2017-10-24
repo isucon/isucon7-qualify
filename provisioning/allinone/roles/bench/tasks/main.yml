@@ -1,0 +1,93 @@
+# -*- mode: Yaml; -*-
+# vi: set ts=2 sw=2 sts=0 et:
+
+---
+- name: Check Installed Golang
+  command: /home/isucon/local/go/bin/go version
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  register: golang_version_output
+  changed_when: golang_version_output|failed
+  ignore_errors: True
+
+- name: Debug golang_version_output
+  debug:
+    var: golang_version_output
+
+- name: Install Golang
+  command: /home/isucon/xbuild/go-install 1.9.1 ~/local/go
+  args:
+    chdir: /home/isucon
+  environment:
+    MAKEFLAGS: "-j {{ cpu_num.stdout }}"
+  become: yes
+  become_user: isucon
+  when: golang_version_output|failed or golang_version_output.stdout != "go version go1.9.1 linux/amd64"
+
+- name: Add PATH settings
+  blockinfile:
+    dest: /home/isucon/.profile
+    marker: '# {mark} Ansible Managed Block'
+    block: |
+      export PATH=/home/isucon/local/go/bin:/home/isucon/go/bin:$PATH
+
+- name: Check Installed gb
+  command: gb help
+  args:
+    chdir: /home/isucon
+  environment:
+    PATH: /home/isucon/local/go/bin:/home/isucon/go/bin:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: gb_help_output
+  changed_when: gb_help_output|failed
+  ignore_errors: True
+
+- name: Debug gb_help_output
+  debug:
+    var: gb_help_output
+
+- name: Install gb
+  command: /home/isucon/local/go/bin/go get -u github.com/constabulary/gb/...
+  args:
+    chdir: /home/isucon
+  become: yes
+  become_user: isucon
+  when: gb_help_output|failed
+
+- name: Install Dependencies
+  command: gb vendor restore
+  args:
+    chdir: /home/isucon/isubata/bench
+  environment:
+    PATH: /home/isucon/local/go/bin:/home/isucon/go/bin:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: gb_ret
+  changed_when: gb_ret|failed
+  #when: isubata_repository.changed
+
+- name: build bench
+  command: make
+  args:
+    chdir: /home/isucon/isubata/bench
+  environment:
+    PATH: /home/isucon/local/go/bin:/home/isucon/go/bin:{{ ansible_env.PATH }}
+  become: yes
+  become_user: isucon
+  register: make_ret
+  changed_when: make_ret|failed
+  #when: isubata_repository.changed
+
+- name: Generate initial data
+  command: ./bin/gen-initial-dataset
+  args:
+    chdir: /home/isucon/isubata/bench
+  become: yes
+  become_user: isucon
+  register: gen_init_data_ret
+  changed_when: gen_init_data_ret|failed
+  when: isubata_repository.changed
+
