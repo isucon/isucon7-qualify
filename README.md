@@ -97,7 +97,7 @@ mysql> GRANT ALL on *.* TO isucon@'localhost';
 初期データ投入
 
 ```sh
-zcat ~/isubata/bench/isucon7q-initial-dataset.sql.gz | sudo mysql --default-character-set=utf8 isubata
+zcat ~/isubata/bench/isucon7q-initial-dataset.sql.gz | sudo mysql isubata
 ```
 
 デフォルトだとTCPが127.0.0.1しかbindしてないので、複数台構成に対応するには
