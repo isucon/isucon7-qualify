@@ -76,7 +76,7 @@
   #when: isubata_repository.changed
 
 - name: Import benchmark data
-  shell: zcat isucon7q-initial-dataset.sql.gz | mysql --default-character-set=utf8 isubata
+  shell: zcat isucon7q-initial-dataset.sql.gz | mysql isubata
   args:
     chdir: /home/isucon/isubata/bench/
   become: yes

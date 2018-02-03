@@ -247,6 +247,7 @@ func GenerateInitialDataSetSQL(outputPath string) {
 	w := gzip.NewWriter(outFile)
 	defer w.Close()
 
+	fbadf(w, "SET NAMES utf8mb4;")
 	fbadf(w, "BEGIN;")
 
 	rnd := rand.New(rand.NewSource(3656))
