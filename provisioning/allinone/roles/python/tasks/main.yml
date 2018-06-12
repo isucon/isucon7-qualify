@@ -47,6 +47,21 @@
   notify:
     - daemon-reload
 
+- name: Install Python lib
+  apt:
+    pkg: "{{ item }}"
+  become: yes
+  with_items:
+    - python3-venv
+    - python3-dev
+
+- name: Exec setup.sh
+  command: sh setup.sh 
+  args:
+    chdir: /home/isucon/isubata/webapp/python
+  become: yes
+  become_user: isucon
+
 - name: Enable and start isubata.python
   systemd:
     name: isubata.python
