@@ -27,7 +27,7 @@
   when: ruby_version_output|failed or ruby_version_output.stdout != "2.4.2"
 
 - name: Install Dependencies
-  command: bundle install
+  command: bundle install --path vendor/bundle
   args:
     chdir: /home/isucon/isubata/webapp/ruby
   environment:
