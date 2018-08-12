@@ -1,0 +1,87 @@
+Count: 5857  Time=0.06s (356s)  Lock=0.00s (0s)  Rows=1.0 (5857), isucon[isucon]@localhost
+  SELECT name, data FROM image WHERE name = 'S' limit N
+
+Count: 32676  Time=0.00s (120s)  Lock=0.00s (6s)  Rows=0.0 (284), isucon[isucon]@localhost
+  select channel_id , count(N) as unread_cnt from message inner join ( select user_id, message_id from haveread where user_id = N ) hr on message.id > hr.message_id and message.user_id = hr.user_id group by channel_id
+
+Count: 134993  Time=0.00s (64s)  Lock=0.00s (0s)  Rows=0.4 (51288), isucon[isucon]@localhost
+  #
+
+Count: 354  Time=0.17s (60s)  Lock=0.00s (0s)  Rows=7.5 (2647), isucon[isucon]@localhost
+  SELECT * FROM message WHERE channel_id = N ORDER BY id DESC LIMIT N OFFSET N
+
+Count: 474  Time=0.06s (29s)  Lock=0.00s (0s)  Rows=37.2 (17631), isucon[isucon]@localhost
+  SELECT * FROM message WHERE channel_id = N and id > N ORDER BY id DESC LIMIT N
+
+Count: 2218  Time=0.01s (18s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  INSERT INTO message (channel_id, user_id, content, created_at) VALUES (N, N, 'S', NOW())
+
+Count: 354  Time=0.05s (16s)  Lock=0.00s (0s)  Rows=1.0 (354), isucon[isucon]@localhost
+  SELECT COUNT(N) as cnt FROM message WHERE channel_id = N
+
+Count: 20278  Time=0.00s (15s)  Lock=0.00s (2s)  Rows=1.0 (20278), isucon[isucon]@localhost
+  SELECT name, display_name, avatar_icon FROM user WHERE id = N
+
+Count: 145  Time=0.05s (6s)  Lock=0.14s (20s)  Rows=0.0 (0), isucon[isucon]@localhost
+  INSERT INTO image (name, data) VALUES ('S', 'S')
+
+Count: 3161  Time=0.00s (3s)  Lock=0.00s (0s)  Rows=1.0 (3161), isucon[isucon]@localhost
+  SELECT * FROM user WHERE id = N
+
+Count: 366  Time=0.01s (2s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at) VALUES (N, N, N, NOW(), NOW()) ON DUPLICATE KEY UPDATE message_id = N, updated_at = NOW()
+
+Count: 151  Time=0.01s (1s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  INSERT INTO user (name, salt, password, display_name, avatar_icon, created_at) VALUES ('S', 'S', 'S', 'S', 'S', NOW())
+
+Count: 145  Time=0.01s (1s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  UPDATE user SET avatar_icon = 'S' WHERE id = N
+
+Count: 354  Time=0.00s (1s)  Lock=0.00s (0s)  Rows=100.0 (35400), isucon[isucon]@localhost
+  SELECT * FROM channel ORDER BY id
+
+Count: 145  Time=0.01s (1s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  UPDATE user SET display_name = 'S' WHERE id = N
+
+Count: 889  Time=0.00s (1s)  Lock=0.00s (0s)  Rows=1.0 (878), isucon[isucon]@localhost
+  SELECT * FROM user WHERE name = 'S'
+
+Count: 187  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=1.0 (187), isucon[isucon]@localhost
+  SELECT * FROM channel where id = N
+
+Count: 155  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=10.0 (1550), isucon[isucon]@localhost
+  SELECT * FROM channel ORDER BY id limit N
+
+Count: 90  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  INSERT INTO channel (name, description, updated_at, created_at) VALUES ('S', 'S', NOW(), NOW())
+
+Count: 1  Time=0.06s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  DELETE FROM image WHERE id > N
+
+Count: 22  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=1.0 (22), isucon[isucon]@localhost
+  SELECT @@max_allowed_packet
+
+Count: 1  Time=0.02s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  DELETE FROM message WHERE id > N
+
+Count: 1  Time=0.01s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  DELETE FROM user WHERE id > N
+
+Count: 1  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  DELETE FROM haveread
+
+Count: 1  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  DELETE FROM channel WHERE id > N
+
+Count: 22  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), isucon[isucon]@localhost
+  SET NAMES utf8mb4
+
+Count: 67490  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), 0users@0hosts
+  administrator command: Prepare
+
+Count: 13  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), 0users@0hosts
+  administrator command: Quit
+
+Count: 67490  Time=0.00s (0s)  Lock=0.00s (0s)  Rows=0.0 (0), 0users@0hosts
+  administrator command: Close stmt
+
