@@ -124,8 +124,8 @@ type Message struct {
 
 func queryMessages(chanID, lastID int64) ([]Message, error) {
 	msgs := []Message{}
-	err := db.Select(&msgs, "SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100",
-		lastID, chanID)
+	err := db.Select(&msgs, "SELECT * FROM message WHERE channel_id = ? and id > ? ORDER BY id DESC LIMIT 100",
+		chanID, lastID)
 	return msgs, err
 }
 
@@ -240,7 +240,7 @@ func getChannel(c echo.Context) error {
 		return err
 	}
 	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
+	err = db.Select(&channels, "SELECT * FROM channel where id = ?", int64(cID))
 	if err != nil {
 		return err
 	}
@@ -436,13 +436,68 @@ func queryHaveRead(userID, chID int64) (int64, error) {
 	return h.MessageID, nil
 }
 
+//func queryHaveReadID(userId, chId int64) (int64, error) {
+//	type HaveReadID struct {
+//		MessageId int64	`db:messge_id`
+//	}
+//	var h HaveReadId
+//	err := db.get(&h, "select message_id from haveread where user_id = ? AND channel_id = ?",
+//			userID, chID)
+//	if err == sql.ErrNoRows {
+//		return 0, nil
+//	} else if err != nil {
+//		return 0, err
+//	}
+//	return h.MessageId, nil
+//}
+
+type UserLastId struct {
+	ChannelId int64 `db:channel_id`
+	MessageId int64 `db:messge_id`
+}
+
+
+type UnreadCnt struct {
+	ChannelID int64 `db:channel_id`
+	UnreadCnt int64 `db:unread_cnt`
+}
+
+func fetchUnreadCnt(c echo.Context) error {
+	userID := sessUserID(c)
+	if userID == 0 {
+		return c.NoContent(http.StatusForbidden)
+	}
+	rows, err := db.Query("select channel_id , count(1) as unread_cnt from message" +
+		" inner join ( select user_id, message_id from haveread where user_id = ? ) hr" +
+		" on message.id > hr.message_id and message.user_id = hr.user_id" +
+		" group by channel_id", userID)
+	if err != nil {
+		return err
+	}
+	resp := []map[string]interface{}{}
+
+	defer rows.Close()
+	for rows.Next() {
+		var chId int64
+		var cnt int64
+		if err := rows.Scan(&chId, &cnt); err != nil {
+			return err
+		}
+		r := map[string]interface{}{
+			"channel_id": chId,
+			"unread": cnt}
+		resp = append(resp, r)
+	}
+	return c.JSON(http.StatusOK, resp)
+}
+
 func fetchUnread(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	time.Sleep(time.Second)
+	// time.Sleep(time.Second)
 
 	channels, err := queryChannels()
 	if err != nil {
@@ -460,11 +515,11 @@ func fetchUnread(c echo.Context) error {
 		var cnt int64
 		if lastID > 0 {
 			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+				"SELECT COUNT(1) as cnt FROM message WHERE channel_id = ? AND id > ?",
 				chID, lastID)
 		} else {
 			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
+				"SELECT COUNT(1) as cnt FROM message WHERE channel_id = ?",
 				chID)
 		}
 		if err != nil {
@@ -503,7 +558,7 @@ func getHistory(c echo.Context) error {
 
 	const N = 20
 	var cnt int64
-	err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
+	err = db.Get(&cnt, "SELECT COUNT(1) as cnt FROM message WHERE channel_id = ?", chID)
 	if err != nil {
 		return err
 	}
@@ -555,7 +610,7 @@ func getProfile(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
+	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id limit 10")
 	if err != nil {
 		return err
 	}
@@ -586,7 +641,7 @@ func getAddChannel(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
+	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id limit 10")
 	if err != nil {
 		return err
 	}
@@ -685,7 +740,7 @@ func postProfile(c echo.Context) error {
 func getIcon(c echo.Context) error {
 	var name string
 	var data []byte
-	err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
+	err := db.QueryRow("SELECT name, data FROM image WHERE name = ? limit 1",
 		c.Param("file_name")).Scan(&name, &data)
 	if err == sql.ErrNoRows {
 		return echo.ErrNotFound
@@ -746,7 +801,7 @@ func main() {
 	e.GET("/channel/:channel_id", getChannel)
 	e.GET("/message", getMessage)
 	e.POST("/message", postMessage)
-	e.GET("/fetch", fetchUnread)
+	e.GET("/fetch", fetchUnreadCnt)
 	e.GET("/history/:channel_id", getHistory)
 
 	e.GET("/profile/:user_name", getProfile)

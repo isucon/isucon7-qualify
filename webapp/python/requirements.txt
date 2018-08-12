@@ -1,3 +1,4 @@
+wheel
 Jinja2
 flask
 mysqlclient
