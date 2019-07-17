@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	_ "net/http/pprof"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -722,6 +723,7 @@ func tRange(a, b int64) []int64 {
 }
 
 func main() {
+	go http.ListenAndServe(":3000", nil)
 	e := echo.New()
 	funcs := template.FuncMap{
 		"add":    tAdd,
