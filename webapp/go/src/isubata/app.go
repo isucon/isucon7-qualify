@@ -122,6 +122,11 @@ type Message struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
+type Unread struct {
+	ChannelID int64
+	Count    int64
+}
+
 func queryMessages(chanID, lastID int64) ([]Message, error) {
 	msgs := []Message{}
 	err := db.Select(&msgs, "SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100",
@@ -436,6 +441,59 @@ func queryHaveRead(userID, chID int64) (int64, error) {
 	return h.MessageID, nil
 }
 
+func myFetchUnread(c echo.Context) error {
+	userID := sessUserID(c)
+	if userID == 0 {
+		return c.NoContent(http.StatusForbidden)
+	}
+	sqlRes := []Unread{}
+	sqlQuery := `
+    SELECT 
+      channel_id,
+      count(1) as cnt
+    FROM (
+      SELECT 
+        m.channel_id,
+        m.id as message_id,
+        last_message.message_id as last_message_id
+      FROM 
+        message m
+      LEFT OUTER JOIN (
+        SELECT 
+          channel_id, 
+          max(message_id) AS message_id,
+          user_id
+        FROM
+          haveread
+        WHERE 
+          user_id = ?
+        GROUP BY 
+          channel_id
+      ) AS last_message
+      ON
+        last_message.channel_id = m.channel_id
+        AND last_message.user_id = m.user_id
+    ) AS joined_table
+    WHERE
+      message_id > last_message_id
+      OR last_message_id is NULL
+    GROUP BY
+      channel_id
+	`
+	err := db.Select(&sqlRes, sqlQuery, userID)
+	if err != nil {
+		return err
+	}
+	resp := []map[string]interface{}{}
+	for _, r := range sqlRes{
+		r := map[string]interface{}{
+		"channel_id": r.ChannelID,
+		"unread":     r.Count}
+		resp = append(resp, r)
+	}
+	return c.JSON(http.StatusOK, resp)
+}
+
 func fetchUnread(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
@@ -746,7 +804,7 @@ func main() {
 	e.GET("/channel/:channel_id", getChannel)
 	e.GET("/message", getMessage)
 	e.POST("/message", postMessage)
-	e.GET("/fetch", fetchUnread)
+	e.GET("/fetch", myFetchUnread)
 	e.GET("/history/:channel_id", getHistory)
 
 	e.GET("/profile/:user_name", getProfile)
