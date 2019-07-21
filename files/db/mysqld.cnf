@@ -102,3 +102,9 @@ max_binlog_size   = 100M
 # ssl-ca=/etc/mysql/cacert.pem
 # ssl-cert=/etc/mysql/server-cert.pem
 # ssl-key=/etc/mysql/server-key.pem
+
+# Isucon config
+slow_query_log=1 # 1 is ON 0 is OFF
+slow_query_log_file='/var/log/mysql/query.log'
+long_query_time=3
+log_queries_not_using_indexes=1
