@@ -448,37 +448,38 @@ func myFetchUnread(c echo.Context) error {
 	}
 	sqlRes := []Unread{}
 	sqlQuery := `
-    SELECT 
-      channel_id,
-      count(1) as cnt
-    FROM (
-      SELECT 
-        m.channel_id,
-        m.id as message_id,
-        last_message.message_id as last_message_id
-      FROM 
-        message m
-      LEFT OUTER JOIN (
         SELECT 
-          channel_id, 
-          max(message_id) AS message_id,
-          user_id
-        FROM
-          haveread
-        WHERE 
-          user_id = ?
-        GROUP BY 
+          channel_id,
+          count(1) AS cnt
+        FROM (
+          SELECT 
+            m.channel_id,
+            m.id AS message_id,
+            last_message.message_id AS last_message_id
+          FROM 
+            message m
+          LEFT OUTER JOIN (
+            SELECT 
+              channel_id, 
+              user_id,
+              max(message_id) AS message_id,
+            FROM
+              haveread
+            WHERE 
+              user_id = ?
+            GROUP BY 
+              channel_id,
+			  user_id
+          ) AS last_message
+          ON
+            last_message.channel_id = m.channel_id
+            AND last_message.user_id = m.user_id
+        ) AS joined_table
+        WHERE
+          message_id > last_message_id
+          OR last_message_id IS NULL
+        GROUP BY
           channel_id
-      ) AS last_message
-      ON
-        last_message.channel_id = m.channel_id
-        AND last_message.user_id = m.user_id
-    ) AS joined_table
-    WHERE
-      message_id > last_message_id
-      OR last_message_id is NULL
-    GROUP BY
-      channel_id
 	`
 	err := db.Select(&sqlRes, sqlQuery, userID)
 	if err != nil {
@@ -804,7 +805,8 @@ func main() {
 	e.GET("/channel/:channel_id", getChannel)
 	e.GET("/message", getMessage)
 	e.POST("/message", postMessage)
-	e.GET("/fetch", myFetchUnread)
+	e.GET("/fetch", fetchUnread)
+	e.GET("/myfetch", myFetchUnread)
 	e.GET("/history/:channel_id", getHistory)
 
 	e.GET("/profile/:user_name", getProfile)
