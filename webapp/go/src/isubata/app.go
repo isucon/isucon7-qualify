@@ -40,6 +40,11 @@ type Renderer struct {
 	templates *template.Template
 }
 
+type Icon struct {
+	Name string `db:"name"`
+	Data []byte `db:"data"`
+}
+
 func (r *Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return r.templates.ExecuteTemplate(w, name, data)
 }
@@ -87,17 +92,16 @@ func init() {
 
 	// 初期画像吐き出す
 	// SQLからGET
-	var names []string
-	var dataList [][]byte
-	err := db.QueryRow("SELECT name, data FROM image").Scan(&names, &dataList)
+	var icons  []Icon
+	err := db.Select(&icons, "SELECT name, data FROM image")
 	if err != nil {
 		log.Println(err)
 		panic(err)
 	}
 	// localに書き出す
-	for i, name := range names {
-		iconPath := iconDir + "/" + name
-		err = ioutil.WriteFile(iconPath, dataList[i], 0644)
+	for _, icon := range icons {
+		iconPath := iconDir + "/" + icon.Name
+		err = ioutil.WriteFile(iconPath, icon.Data, 0644)
 		if err != nil {
 			log.Println(err)
 			panic(err)
