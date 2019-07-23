@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	_ "net/http/pprof"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -27,6 +28,7 @@ import (
 
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
+	iconDir = "/home/isucon/isubata/webapp/public/icons"
 )
 
 var (
@@ -36,6 +38,11 @@ var (
 
 type Renderer struct {
 	templates *template.Template
+}
+
+type Icon struct {
+	Name string `db:"name"`
+	Data []byte `db:"data"`
 }
 
 func (r *Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
@@ -78,9 +85,28 @@ func init() {
 		time.Sleep(time.Second * 3)
 	}
 
-	db.SetMaxOpenConns(20)
+	db.SetMaxOpenConns(8)
+	db.SetMaxIdleConns(8)
 	db.SetConnMaxLifetime(5 * time.Minute)
 	log.Printf("Succeeded to connect db.")
+
+	// 初期画像吐き出す
+	// SQLからGET
+	var icons  []Icon
+	err := db.Select(&icons, "SELECT name, data FROM image")
+	if err != nil {
+		log.Println(err)
+		panic(err)
+	}
+	// localに書き出す
+	for _, icon := range icons {
+		iconPath := iconDir + "/" + icon.Name
+		err = ioutil.WriteFile(iconPath, icon.Data, 0644)
+		if err != nil {
+			log.Println(err)
+			panic(err)
+		}
+	}
 }
 
 type User struct {
@@ -662,8 +688,11 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		// localにも保存
+		iconPath := iconDir + "/" + avatarName
+		err = ioutil.WriteFile(iconPath, avatarData, 0644)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
@@ -721,6 +750,7 @@ func tRange(a, b int64) []int64 {
 }
 
 func main() {
+	go http.ListenAndServe(":3000", nil)
 	e := echo.New()
 	funcs := template.FuncMap{
 		"add":    tAdd,
