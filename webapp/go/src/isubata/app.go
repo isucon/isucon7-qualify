@@ -80,6 +80,11 @@ func init() {
 		time.Sleep(time.Second * 3)
 	}
 
+	db.SetMaxOpenConns(8)
+	db.SetMaxIdleConns(8)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	log.Printf("Succeeded to connect db.")
+
 	// 初期画像吐き出す
 	// SQLからGET
 	var names []string
@@ -96,11 +101,6 @@ func init() {
 			panic(err)
 		}
 	}
-
-	db.SetMaxOpenConns(8)
-	db.SetMaxIdleConns(8)
-	db.SetConnMaxLifetime(5 * time.Minute)
-	log.Printf("Succeeded to connect db.")
 }
 
 type User struct {
