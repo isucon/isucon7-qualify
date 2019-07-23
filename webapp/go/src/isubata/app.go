@@ -28,6 +28,7 @@ import (
 
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
+	iconDir = "/home/isucon/isubata/webapp/public/icons"
 )
 
 var (
@@ -77,6 +78,23 @@ func init() {
 		}
 		log.Println(err)
 		time.Sleep(time.Second * 3)
+	}
+
+	// 初期画像吐き出す
+	// SQLからGET
+	var names []string
+	var dataList [][]byte
+	err := db.QueryRow("SELECT name, data FROM image").Scan(&names, &dataList)
+	if err != nil {
+		panic(err)
+	}
+	// localに書き出す
+	for i, name := range names {
+		iconPath := iconDir + "/" + name
+		err = ioutil.WriteFile(iconPath, dataList[i], 0644)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	db.SetMaxOpenConns(8)
