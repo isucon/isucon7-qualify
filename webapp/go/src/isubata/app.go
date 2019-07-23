@@ -91,6 +91,7 @@ func init() {
 	var dataList [][]byte
 	err := db.QueryRow("SELECT name, data FROM image").Scan(&names, &dataList)
 	if err != nil {
+		log.Println(err)
 		panic(err)
 	}
 	// localに書き出す
@@ -98,6 +99,7 @@ func init() {
 		iconPath := iconDir + "/" + name
 		err = ioutil.WriteFile(iconPath, dataList[i], 0644)
 		if err != nil {
+			log.Println(err)
 			panic(err)
 		}
 	}
