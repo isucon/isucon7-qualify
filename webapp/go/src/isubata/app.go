@@ -688,8 +688,11 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		// localにも保存
+		iconPath := iconDir + "/" + avatarName
+		err = ioutil.WriteFile(iconPath, avatarData, 0644)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
