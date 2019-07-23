@@ -123,8 +123,8 @@ type Message struct {
 }
 
 type Unread struct {
-	ChannelID int64
-	Count    int64
+	ChannelID int64 `db:"channel_id"`
+	Count    int64 `db:"cnt"`
 }
 
 func queryMessages(chanID, lastID int64) ([]Message, error) {
@@ -448,48 +448,63 @@ func myFetchUnread(c echo.Context) error {
 	}
 	sqlRes := []Unread{}
 	sqlQuery := `
-SELECT  
-        channel_id,
-        count(1) AS cnt
-FROM (  
-        SELECT
-                m.channel_id,
-                m.id AS message_id,
-                last_message.message_id AS last_message_id
-        FROM
-                message m
-        LEFT OUTER JOIN (
-                SELECT
-                        channel_id,
-                        user_id,
-                        max(message_id) AS message_id,
-                FROM
-                        haveread
-                WHERE
-                        user_id = ?
-                GROUP BY
-                        channel_id,
-                        user_id
-        ) AS last_message
-        ON
-                last_message.channel_id = m.channel_id
-                AND last_message.user_id = m.user_id
+        SELECT 
+          channel_id,
+          count(1) AS cnt
+        FROM (
+          SELECT 
+            m.channel_id,
+            m.id AS message_id,
+            last_message.message_id AS last_message_id
+          FROM 
+            message m
+          LEFT OUTER JOIN (
+            SELECT 
+              channel_id, 
+              max(message_id) AS message_id
+            FROM
+              haveread
+            WHERE 
+              user_id = ?
+            GROUP BY 
+              channel_id
+          ) AS last_message
+          ON
+            last_message.channel_id = m.channel_id
         ) AS joined_table
-WHERE
-        message_id > last_message_id
-        OR last_message_id IS NULL
-GROUP BY
-        channel_id
+        WHERE
+          message_id > last_message_id
+          OR last_message_id IS NULL
+        GROUP BY
+          channel_id
 	`
 	err := db.Select(&sqlRes, sqlQuery, userID)
 	if err != nil {
 		return err
 	}
 	resp := []map[string]interface{}{}
+
+	used_channel_id := make(map[int64]struct{})
 	for _, r := range sqlRes{
+		println(r.ChannelID, r.Count)
+		used_channel_id[r.ChannelID] = struct{}{}
 		r := map[string]interface{}{
-		"channel_id": r.ChannelID,
-		"unread":     r.Count}
+			"channel_id": r.ChannelID,
+			"unread":     r.Count}
+		resp = append(resp, r)
+	}
+	channels, err := queryChannels()
+	if err != nil {
+		return err
+	}
+	for _, chID := range channels {
+		_, ok := used_channel_id[chID]
+		if ok {
+			continue
+		}
+		r := map[string]interface{}{
+			"channel_id": chID,
+			"unread": 0}
 		resp = append(resp, r)
 	}
 	return c.JSON(http.StatusOK, resp)
@@ -805,8 +820,8 @@ func main() {
 	e.GET("/channel/:channel_id", getChannel)
 	e.GET("/message", getMessage)
 	e.POST("/message", postMessage)
-	e.GET("/fetch", fetchUnread)
-	e.GET("/myfetch", myFetchUnread)
+	e.GET("/fetch", myFetchUnread)
+	e.GET("/myfetch", fetchUnread)
 	e.GET("/history/:channel_id", getHistory)
 
 	e.GET("/profile/:user_name", getProfile)
@@ -818,3 +833,4 @@ func main() {
 
 	e.Start(":5000")
 }
+
