@@ -456,7 +456,7 @@ func getJsonifyMessages(chanID, lastID int64) ([]map[string]interface{}, error) 
 	return rs, err
 }
 
-func getMyMessage(c echo.Context) error {
+func myGetMessage(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
 		return c.NoContent(http.StatusForbidden)
@@ -471,17 +471,12 @@ func getMyMessage(c echo.Context) error {
 		return err
 	}
 
-	messages, err := queryMessages(chanID, lastID)
-	if err != nil {
-		return err
-	}
-
 	response, err := getJsonifyMessages(chanID, lastID)
 	if err != nil {
 		return err
 	}
 
-	if len(messages) > 0 {
+	if len(response) > 0 {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
 			" VALUES (?, ?, ?, NOW(), NOW())"+
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
@@ -877,7 +872,7 @@ func main() {
 
 	e.GET("/channel/:channel_id", getChannel)
 	//e.GET("/message", getMessage)
-	e.GET("/message", getMyMessage)
+	e.GET("/message", myGetMessage)
 	e.POST("/message", postMessage)
 	e.GET("/fetch", fetchUnread)
 	e.GET("/history/:channel_id", getHistory)
