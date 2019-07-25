@@ -430,14 +430,15 @@ func getJsonifyMessages(chanID, lastID int64) ([]map[string]interface{}, error) 
 	WHERE 
 		m.id > ? AND channel_id = ? 
 	ORDER BY 
-		m.id
+		m.id DESC
 	LIMIT 
 		100
 	`
 	err := db.Select(&msgsWithUser, sqlQuery, lastID, chanID)
 	rs := make([]map[string]interface{}, 0)
 
-	for _, v := range msgsWithUser {
+	for i := len(msgsWithUser) - 1; i >= 0; i-- {
+		v := msgsWithUser[i]
 		r := make(map[string]interface{})
 		r["id"] = v.MessageID
 		r["user"] = User {
@@ -475,12 +476,11 @@ func myGetMessage(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	mxIdx := len(response) - 1
 	if len(response) > 0 {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
 			" VALUES (?, ?, ?, NOW(), NOW())"+
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, response[mxIdx]["id"], response[mxIdx]["id"])
+			userID, chanID, response[0]["id"], response[0]["id"])
 		if err != nil {
 			log.Print(err)
 			return err
