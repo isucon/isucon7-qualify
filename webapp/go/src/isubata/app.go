@@ -482,6 +482,7 @@ func myGetMessage(c echo.Context) error {
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
 			userID, chanID, response[mxIdx]["id"], response[mxIdx]["id"])
 		if err != nil {
+			log.Print(err)
 			return err
 		}
 	}
