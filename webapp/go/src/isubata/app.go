@@ -148,6 +148,20 @@ type Message struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
+type MessageWithUser struct {
+	MessageID        int64     `db:"message_id"`
+	ChannelID int64     `db:"channel_id"`
+	Content   string    `db:"content"`
+	MssageCreatedAt time.Time `db:"message_created_at"`
+	UserID    int64     `db:"user_id"`
+	Name        string    `json:"name" db:"name"`
+	Salt        string    `json:"-" db:"salt"`
+	Password    string    `json:"-" db:"password"`
+	DisplayName string    `json:"display_name" db:"display_name"`
+	AvatarIcon  string    `json:"avatar_icon" db:"avatar_icon"`
+	UserCreatedAt   time.Time `json:"-" db:"user_created_at"`
+}
+
 func queryMessages(chanID, lastID int64) ([]Message, error) {
 	msgs := []Message{}
 	err := db.Select(&msgs, "SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100",
@@ -390,6 +404,95 @@ func jsonifyMessage(m Message) (map[string]interface{}, error) {
 	r["date"] = m.CreatedAt.Format("2006/01/02 15:04:05")
 	r["content"] = m.Content
 	return r, nil
+}
+
+func getJsonifyMessages(chanID, lastID int64) ([]map[string]interface{}, error) {
+	msgsWithUser := []MessageWithUser{}
+	query = `
+	SELECT 
+		m.id as message_id, 
+		channel_id, 
+		content, 
+		m.created_at as message_created_at, 
+		user_id,
+		name,
+		password,
+		salt,
+		display_name,
+		avatar_icon,
+		u.created_at as user_created_at
+	FROM 
+		message m 
+	JOIN
+		user u
+	ON
+		user_id = u.id
+	WHERE 
+		m.id > 120 AND channel_id = 1 
+	ORDER BY 
+		m.id DESC 
+	LIMIT 
+		100
+	`
+	err := db.Select(&msgsWithUser, "SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100",
+		lastID, chanID)
+	rs := make([]map[string]interface{}, 0)
+
+	for _, v := range msgsWithUser {
+		r := make(map[string]interface{})
+		r["id"] = v.MessageID
+		r["user"] = User {
+			v.UserID,
+			v.Name,
+			v.Salt,
+			v.Password,
+			v.DisplayName,
+			v.AvatarIcon,
+			v.UserCreatedAt,
+		}
+		r["date"] = v.MssageCreatedAt.Format("2006/01/02 15:04:05")
+		r["content"] = v.Content
+		rs = append(rs, r)
+	}
+	return rs, err
+}
+
+func getMyMessage(c echo.Context) error {
+	userID := sessUserID(c)
+	if userID == 0 {
+		return c.NoContent(http.StatusForbidden)
+	}
+
+	chanID, err := strconv.ParseInt(c.QueryParam("channel_id"), 10, 64)
+	if err != nil {
+		return err
+	}
+	lastID, err := strconv.ParseInt(c.QueryParam("last_message_id"), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	messages, err := queryMessages(chanID, lastID)
+	if err != nil {
+		return err
+	}
+
+	response, err := getJsonifyMessages(chanID, lastID)
+	if err != nil {
+		return err
+	}
+
+	if len(messages) > 0 {
+		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
+			" VALUES (?, ?, ?, NOW(), NOW())"+
+			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
+			userID, chanID, messages[0].ID, messages[0].ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func getMessage(c echo.Context) error {
@@ -774,7 +877,8 @@ func main() {
 	e.GET("/logout", getLogout)
 
 	e.GET("/channel/:channel_id", getChannel)
-	e.GET("/message", getMessage)
+	//e.GET("/message", getMessage)
+	e.GET("/message", getMyMessage)
 	e.POST("/message", postMessage)
 	e.GET("/fetch", fetchUnread)
 	e.GET("/history/:channel_id", getHistory)
