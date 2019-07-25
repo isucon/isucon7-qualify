@@ -408,7 +408,7 @@ func jsonifyMessage(m Message) (map[string]interface{}, error) {
 
 func getJsonifyMessages(chanID, lastID int64) ([]map[string]interface{}, error) {
 	msgsWithUser := []MessageWithUser{}
-	query = `
+	sqlQuery := `
 	SELECT 
 		m.id as message_id, 
 		channel_id, 
@@ -434,8 +434,7 @@ func getJsonifyMessages(chanID, lastID int64) ([]map[string]interface{}, error) 
 	LIMIT 
 		100
 	`
-	err := db.Select(&msgsWithUser, "SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100",
-		lastID, chanID)
+	err := db.Select(&msgsWithUser, sqlQuery, lastID, chanID)
 	rs := make([]map[string]interface{}, 0)
 
 	for _, v := range msgsWithUser {
