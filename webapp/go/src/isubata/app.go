@@ -430,7 +430,7 @@ func getJsonifyMessages(chanID, lastID int64) ([]map[string]interface{}, error) 
 	WHERE 
 		m.id > ? AND channel_id = ? 
 	ORDER BY 
-		m.id DESC 
+		m.id
 	LIMIT 
 		100
 	`
