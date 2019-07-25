@@ -428,7 +428,7 @@ func getJsonifyMessages(chanID, lastID int64) ([]map[string]interface{}, error) 
 	ON
 		user_id = u.id
 	WHERE 
-		m.id > 120 AND channel_id = 1 
+		m.id > ? AND channel_id = ? 
 	ORDER BY 
 		m.id DESC 
 	LIMIT 
