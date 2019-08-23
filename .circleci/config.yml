@@ -4,6 +4,7 @@ jobs:
   build:
     docker:
       - image: yokogawa/ansible-lint
+      - image: python:3.7
     working_directory: ~/isucon/
 
     steps:
@@ -12,3 +13,7 @@ jobs:
       - run:
           name: Run ansible lint
           command: git ls-files -z provisioning/*.yml | xargs -0 -r ansible-lint --force-color -x ANSIBLE0016
+      
+      - run:
+          name: Benchmark script
+          command: bench/python3 bench.py 10
