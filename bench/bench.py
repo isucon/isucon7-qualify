@@ -21,11 +21,23 @@ for i in range(loop):
     score = json.load(f)["score"]
     scores.append(score)
 
+result = {}
+result["results"] = {}
 for i, score in enumerate(scores):
     print(i+1, "回目のベンチマークスコア: ", score)
+    result["results"][str(i+1)] = score
 
 print("平均: ", np.mean(scores))
+result["mean"] = float(np.mean(scores))
 print("中央: ", np.median(scores))
+result["median"] = float(np.median(scores))
 print("最小: ", np.amin(scores))
+result["min"] = float(np.amin(scores))
 print("最大: ", np.amax(scores))
+result["max"] = float(np.amax(scores))
+
+with open("result.json", "w") as f:
+    f.write(json.dumps(result) + "\n")
+
+print("result.jsonに結果を出力しました。")
 print("------------------------------------------------------------")
