@@ -1,14 +1,17 @@
+# -*- coding: utf-8 -*-
+
 import subprocess
 import sys
 import json
 import numpy as np
+from datetime import datetime
+
 
 '''
 usage
 $ python3 bench.py 10
 -> 10回ベンチを回し、結果を表示する
 '''
-
 
 args = sys.argv
 loop = int(args[1])
@@ -36,7 +39,9 @@ result["min"] = float(np.amin(scores))
 print("最大: ", np.amax(scores))
 result["max"] = float(np.amax(scores))
 
-with open("result.json", "w") as f:
+now = datetime.now()
+filename = "{0:%m%d%H%M}.json".format(now)
+with open("result/"+filename, "w") as f:
     f.write(json.dumps(result) + "\n")
 
 print("result.jsonに結果を出力しました。")
