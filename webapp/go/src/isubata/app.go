@@ -100,6 +100,8 @@ func init() {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
+	log.Printf("Redis client:", client)
+
 }
 
 type User struct {
@@ -114,8 +116,10 @@ type User struct {
 
 func getUser(userID int64) (*User, error) {
 	u := User{}
+	val = redisGet(client, "User", userID)
+	&u, ok = val.(*User)
 
-	if val = redisGet(client, "User", userID); val == nil {
+	if val == nil || ok == false {
 		if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
 			if err == sql.ErrNoRows {
 				return nil, nil
@@ -123,8 +127,6 @@ func getUser(userID int64) (*User, error) {
 			return nil, err
 		}
 		redisSet(client, "User", userID, &u)
-	} else {
-		&u = val.(*User)
 	}
 
 	return &u, nil
@@ -750,7 +752,7 @@ func redisSet(client *redis.Client, tag string, id string, object interface{}) {
 	key := fmt.Sprintf("%s:%s", tag, id)
 	err := client.Set(key, object, time.Hour).Err()
 	if err != nil {
-		fmt.Println("redis.Client.Set Error:", err)
+		log.Printf("redis.Client.Set Error:", err)
 	}
 }
 
@@ -758,7 +760,7 @@ func redisGet(client *redis.Client, tag string, id string) interface{} {
 	key := fmt.Sprintf("%s:%s", tag, id)
 	val, err := client.Get(key).Result()
 	if err != nil {
-		fmt.Println("redis.Client.Get Error:", err)
+		log.Printf("redis.Client.Get Error:", err)
 		return nil
 	}
 	return val
