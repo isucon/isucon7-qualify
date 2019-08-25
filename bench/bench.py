@@ -41,7 +41,7 @@ result["max"] = float(np.amax(scores))
 
 now = datetime.now()
 filename = "{0:%m%d%H%M}.json".format(now)
-with open("result/"+filename, "w") as f:
+with open("result/" + filename + "_" + str(int(result["mean"])), "w") as f:
     f.write(json.dumps(result) + "\n")
 
 print("result.jsonに結果を出力しました。")
