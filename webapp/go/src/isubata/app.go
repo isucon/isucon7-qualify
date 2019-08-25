@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -31,6 +32,7 @@ const (
 
 var (
 	db            *sqlx.DB
+	client        *redis.Client
 	ErrBadReqeust = echo.NewHTTPError(http.StatusBadRequest)
 )
 
@@ -81,6 +83,25 @@ func init() {
 	db.SetMaxOpenConns(20)
 	db.SetConnMaxLifetime(5 * time.Minute)
 	log.Printf("Succeeded to connect db.")
+
+	//Redisの環境設定
+	redis_host := os.Getenv("ISUBATA_REDIS_HOST")
+	if redis_host == "" {
+		db_host = "127.0.0.1"
+	}
+	redis_port := os.Getenv("ISUBATA_REDIS_PORT")
+	if redis_host == "" {
+		db_host = "6379"
+	}
+
+	redis_addr = fmt.Sprintf("%s:%s", redis_host, redis_port)
+	client = redis.NewClient(&redis.Options{
+		Addr:     redis_addr,
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	log.Printf("Redis client:", client)
+
 }
 
 type User struct {
@@ -95,12 +116,19 @@ type User struct {
 
 func getUser(userID int64) (*User, error) {
 	u := User{}
-	if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
+	val = redisGet(client, "User", userID)
+	&u, ok = val.(*User)
+
+	if val == nil || ok == false {
+		if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, nil
+			}
+			return nil, err
 		}
-		return nil, err
+		redisSet(client, "User", userID, &u)
 	}
+
 	return &u, nil
 }
 
@@ -718,6 +746,24 @@ func tRange(a, b int64) []int64 {
 		r[i] = a + i
 	}
 	return r
+}
+
+func redisSet(client *redis.Client, tag string, id string, object interface{}) {
+	key := fmt.Sprintf("%s:%s", tag, id)
+	err := client.Set(key, object, time.Hour).Err()
+	if err != nil {
+		log.Printf("redis.Client.Set Error:", err)
+	}
+}
+
+func redisGet(client *redis.Client, tag string, id string) interface{} {
+	key := fmt.Sprintf("%s:%s", tag, id)
+	val, err := client.Get(key).Result()
+	if err != nil {
+		log.Printf("redis.Client.Get Error:", err)
+		return nil
+	}
+	return val
 }
 
 func main() {
