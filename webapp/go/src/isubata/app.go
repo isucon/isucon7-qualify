@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis"
+	//"github.com/go-redis/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -94,13 +94,13 @@ func init() {
 		db_host = "6379"
 	}
 
-	redis_addr = fmt.Sprintf("%s:%s", redis_host, redis_port)
-	client = redis.NewClient(&redis.Options{
-		Addr:     redis_addr,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-	log.Printf("Redis client:", client)
+	// redis_addr = fmt.Sprintf("%s:%s", redis_host, redis_port)
+	// client = redis.NewClient(&redis.Options{
+	// 	Addr:     redis_addr,
+	// 	Password: "", // no password set
+	// 	DB:       0,  // use default DB
+	// })
+	// log.Printf("Redis client:", client)
 
 }
 
@@ -116,8 +116,9 @@ type User struct {
 
 func getUser(userID int64) (*User, error) {
 	u := User{}
-	val = redisGet(client, "User", userID)
-	&u, ok = val.(*User)
+	// val = redisGet(client, "User", userID)
+	// &u, ok = val.(*User)
+	val := nil
 
 	if val == nil || ok == false {
 		if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
@@ -126,7 +127,7 @@ func getUser(userID int64) (*User, error) {
 			}
 			return nil, err
 		}
-		redisSet(client, "User", userID, &u)
+		//redisSet(client, "User", userID, &u)
 	}
 
 	return &u, nil
@@ -748,23 +749,23 @@ func tRange(a, b int64) []int64 {
 	return r
 }
 
-func redisSet(client *redis.Client, tag string, id string, object interface{}) {
-	key := fmt.Sprintf("%s:%s", tag, id)
-	err := client.Set(key, object, time.Hour).Err()
-	if err != nil {
-		log.Printf("redis.Client.Set Error:", err)
-	}
-}
+// func redisSet(client *redis.Client, tag string, id string, object interface{}) {
+// 	key := fmt.Sprintf("%s:%s", tag, id)
+// 	err := client.Set(key, object, time.Hour).Err()
+// 	if err != nil {
+// 		log.Printf("redis.Client.Set Error:", err)
+// 	}
+// }
 
-func redisGet(client *redis.Client, tag string, id string) interface{} {
-	key := fmt.Sprintf("%s:%s", tag, id)
-	val, err := client.Get(key).Result()
-	if err != nil {
-		log.Printf("redis.Client.Get Error:", err)
-		return nil
-	}
-	return val
-}
+// func redisGet(client *redis.Client, tag string, id string) interface{} {
+// 	key := fmt.Sprintf("%s:%s", tag, id)
+// 	val, err := client.Get(key).Result()
+// 	if err != nil {
+// 		log.Printf("redis.Client.Get Error:", err)
+// 		return nil
+// 	}
+// 	return val
+// }
 
 func main() {
 	e := echo.New()
