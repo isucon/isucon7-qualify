@@ -98,17 +98,13 @@ type User struct {
 func getUser(userID int64) (*User, error) {
 
 	u := User{}
-	//redisGet_User(userID, &u)
 
-	//if &u == nil {
 	if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
-	//	redisSet_User(userID, &u)
-	//}
 
 	return &u, nil
 }
@@ -249,12 +245,13 @@ func getChannel(c echo.Context) error {
 		return err
 	}
 	channels := []ChannelInfo{}
-	if redisGet_Channnels(&channels) == false {
+
+	if redisGet("Channels", "0", &channels) == false {
 		err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 		if err != nil {
 			return err
 		}
-		redisSet_Channnels(&channels)
+		redisSet("Channels", "0", &channels)
 	}
 
 	var desc string
@@ -545,12 +542,12 @@ func getHistory(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
-	if redisGet_Channnels(&channels) == false {
+	if redisGet("Channels", "0", &channels) == false {
 		err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 		if err != nil {
 			return err
 		}
-		redisSet_Channnels(&channels)
+		redisSet("Channels", "0", &channels)
 	}
 
 	return c.Render(http.StatusOK, "history", map[string]interface{}{
@@ -570,12 +567,12 @@ func getProfile(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
-	if redisGet_Channnels(&channels) == false {
+	if redisGet("Channels", "0", &channels) {
 		err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 		if err != nil {
 			return err
 		}
-		redisSet_Channnels(&channels)
+		redisSet("Channels", "0", &channels)
 	}
 
 	userName := c.Param("user_name")
@@ -604,13 +601,12 @@ func getAddChannel(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
-
-	if redisGet_Channnels(&channels) == false {
+	if redisGet("Channels", "0", &channels) {
 		err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 		if err != nil {
 			return err
 		}
-		redisSet_Channnels(&channels)
+		redisSet("Channels", "0", &channels)
 	}
 
 	return c.Render(http.StatusOK, "add_channel", map[string]interface{}{
@@ -638,6 +634,8 @@ func postAddChannel(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	redisDel("Channels", "0")
+
 	lastID, _ := res.LastInsertId()
 	return c.Redirect(http.StatusSeeOther,
 		fmt.Sprintf("/channel/%v", lastID))
@@ -742,159 +740,93 @@ func tRange(a, b int64) []int64 {
 	return r
 }
 
-/*
- 汎用型関数作ろうとしたけど断念
-*/
-// func redisSet(tag string, id string, object interface{}) {
-
-// 	c, err := redis.Dial("tcp", ":6379")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer c.Close()
-
-// 	switch objectFormat := object.(type) {
-// 	case *User:
-// 		key := fmt.Sprintf("%s:%s", tag, id)
-// 		serialized, _ := json.Marshal(objectFormat)
-// 		val, err := c.Do("Set", key, serialized, "NX", "EX", "3600")
-// 		if val == nil {
-// 			log.Printf("redisSet:This object exist already")
-// 		}
-// 		if err != nil {
-// 			log.Printf("redisSet:Error :", err)
-// 		}
-// 	default:
-// 		log.Printf("redisSet:Assertion Error")
-// 	}
-
-// }
-
-// func redisGet(tag string, id string) interface{} {
-
-// 	c, err := redis.Dial("tcp", ":6379")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer c.Close()
-
-// 	key := fmt.Sprintf("%s:%s", tag, id)
-// 	val, err := redis.Bytes(c.Do("Get", key))
-// 	if err != nil {
-// 		log.Printf("redisGet:Error :", err)
-// 		return nil
-// 	}
-
-// 	if val != nil {
-// 		switch tag {
-// 		case "User":
-// 			deserialized := new(User)
-// 			json.Unmarshal(val, deserialized)
-// 			return deserialized
-// 		default:
-// 			log.Printf("redisGet:Invalid Tag")
-// 			return nil
-// 		}
-// 	} else {
-// 		return nil
-// 	}
-// }
-
-/*
-Userのjson設定的にやりづらい　どうしよう
-*/
-// func redisSet_User(id int64, user *User) {
-
-// 	c, err := redis.Dial("tcp", ":6379")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer c.Close()
-
-// 	key := fmt.Sprintf("User:%d", id)
-// 	serialized, _ := json.Marshal(user)
-// 	val, err := c.Do("Set", key, serialized, "NX", "EX", "3600")
-// 	if val == nil {
-// 		log.Printf("redisSet:This object exist already")
-// 	}
-// 	if err != nil {
-// 		log.Printf("redisSet:Error :", err)
-// 	}
-
-// }
-
-// func redisGet_User(id int64, user *User) bool {
-
-// 	c, err := redis.Dial("tcp", ":6379")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer c.Close()
-
-// 	key := fmt.Sprintf("User:%d", id)
-// 	val, err := redis.Bytes(c.Do("Get", key))
-// 	if err != nil {
-// 		log.Printf("redisGet:Error :", err)
-// 		return false
-// 	}
-
-// 	if val != nil {
-// 		err := json.Unmarshal(val, user)
-// 		if err != nil {
-// 			log.Printf("redisGet:Error :", err)
-// 			return false
-// 		}
-// 		return true
-// 	} else {
-// 		return false
-// 	}
-// }
-
-func redisSet_Channnels(channels *[]ChannelInfo) {
+//redisの汎用関数Set、データが増えたら随時caseを追加
+func redisSet(tag string, id string, object interface{}) bool {
 
 	c, err := redis.Dial("tcp", ":6379")
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 	defer c.Close()
 
-	serialized, _ := json.Marshal(channels)
-	val, err := c.Do("Set", "Channels", serialized, "NX", "EX", "3600")
-	if val == nil {
-		log.Printf("redisSet:This object exist already")
-	} else if err != nil {
-		log.Printf("redisSet:Error :%s", err)
-	} else {
-		log.Printf("redisSet:Success! key:Channels,object:%s", string(serialized))
+	switch objectFormat := object.(type) {
+	case *[]ChannelInfo:
+		key := fmt.Sprintf("%s:%s", tag, id)
+		serialized, _ := json.Marshal(objectFormat)
+		val, err := c.Do("Set", key, serialized, "NX", "EX", "3600")
+		if val == nil {
+			log.Printf("redisSet:This object exist already")
+			return false
+		} else if err != nil {
+			log.Printf("redisSet:Error :", err)
+			return false
+		} else {
+			log.Printf("redisSet:Success!! (%s,%s)", tag, id)
+			return true
+		}
+	default:
+		log.Printf("redisSet:Assertion Error")
+		return false
 	}
 
 }
 
-func redisGet_Channnels(channels *[]ChannelInfo) bool {
+//redisの汎用関数Get、データが増えたら随時caseを追加
+func redisGet(tag string, id string, object interface{}) bool {
 
 	c, err := redis.Dial("tcp", ":6379")
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 	defer c.Close()
 
-	val, err := redis.Bytes(c.Do("Get", "Channels"))
+	key := fmt.Sprintf("%s:%s", tag, id)
+	val, err := redis.Bytes(c.Do("Get", key))
 	if err != nil {
-		log.Printf("redisGet:Error :%s", err)
+		log.Printf("redisGet:Error :", err)
 		return false
 	}
 
 	if val != nil {
-		err := json.Unmarshal(val, channels)
-		if err != nil {
-			log.Printf("redisGet:Error :%s", err)
+		switch objectFormat := object.(type) {
+		case *[]ChannelInfo:
+			err := json.Unmarshal(val, objectFormat)
+			if err != nil {
+				log.Printf("redisGet:Assertion Error :", err)
+				return false
+			} else {
+				log.Printf("redisGet:Success!! (%s,%s)", tag, id)
+				return true
+			}
+		default:
+			log.Printf("redisGet:Invalid type")
 			return false
 		}
-		log.Printf("redisGet:Success! key:Channels,object:%s", string(val))
-		return true
 	} else {
-		log.Printf("redisGet:This key is not used")
+		log.Printf("redisGet:Invalid Key")
 		return false
+	}
+}
+
+//redisの汎用関数Delete
+func redisDel(tag string, id string) bool {
+
+	c, err := redis.Dial("tcp", ":6379")
+	if err != nil {
+		log.Fatal(err)
+		return false
+	}
+	defer c.Close()
+
+	key := fmt.Sprintf("%s:%s", tag, id)
+	if _, err := c.Do("DEL", key); err != nil {
+		log.Printf("redisDel:Error :", err)
+		return false
+	} else {
+		log.Printf("redisDel:Success!! (%s,%s)", tag, id)
+		return true
 	}
 }
 

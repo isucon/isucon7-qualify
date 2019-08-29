@@ -14,6 +14,13 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/garyburd/redigo/internal",
+			"repository": "https://github.com/garyburd/redigo",
+			"revision": "569eae59ada904ea8db7a225c2b47165af08735a",
+			"branch": "master",
+			"path": "/internal"
+		},
+		{
 			"importpath": "github.com/marcw/cachecontrol",
 			"repository": "https://github.com/marcw/cachecontrol",
 			"revision": "30341fe9a7d531c7bc6414af55ceb59b9e61499a",
