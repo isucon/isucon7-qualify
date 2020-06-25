@@ -6,7 +6,7 @@ GEM
     mustermann (1.0.1)
     mysql2 (0.4.9)
     puma (3.10.0)
-    rack (2.0.3)
+    rack (2.2.3)
     rack-protection (2.0.0)
       rack
     sinatra (2.0.0)
