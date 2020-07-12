@@ -3,6 +3,7 @@ require 'mysql2'
 require 'sinatra/base'
 
 class App < Sinatra::Base
+
   configure do
     set :session_secret, 'tonymoris'
     set :public_folder, File.expand_path('../../public', __FILE__)
@@ -299,13 +300,19 @@ class App < Sinatra::Base
 
         avatar_name = digest + ext
         avatar_data = data
+
+        # 画像保存をファイルシステムに変更
+	path = '/home/isucon/isubata/webapp/public/icons/#{avatar_name}'
+        f = File.open(path)
+        f.write(avatar_data) unless f.exists?(path)
       end
     end
 
+
     if !avatar_name.nil? && !avatar_data.nil?
-      statement = db.prepare('INSERT INTO image (name, data) VALUES (?, ?)')
-      statement.execute(avatar_name, avatar_data)
-      statement.close
+      #statement = db.prepare('INSERT INTO image (name, data) VALUES (?, ?)')
+      #statement.execute(avatar_name, avatar_data)
+      #statement.close
       statement = db.prepare('UPDATE user SET avatar_icon = ? WHERE id = ?')
       statement.execute(avatar_name, user['id'])
       statement.close
@@ -320,16 +327,31 @@ class App < Sinatra::Base
     redirect '/', 303
   end
 
+  post'/dump/icons' do
+    rows = db.query('SELECT `name`, `data` FROM `image`')
+
+    rows.each do |row|
+      File.write("/home/isucon/isubata/webapp/public/icons/#{row['name']}", row['data'])
+    end
+
+    redirect '/'
+  end
+
   get '/icons/:file_name' do
     file_name = params[:file_name]
-    statement = db.prepare('SELECT * FROM image WHERE name = ?')
-    row = statement.execute(file_name).first
-    statement.close
-    ext = file_name.include?('.') ? File.extname(file_name) : ''
-    mime = ext2mime(ext)
-    if !row.nil? && !mime.empty?
-      content_type mime
-      return row['data']
+    #statement = db.prepare('SELECT * FROM image WHERE name = ?')
+    #row = statement.execute(file_name).first
+    #statement.close
+    #ext = file_name.include?('.') ? File.extname(file_name) : ''
+    #mime = ext2mime(ext)
+    #if !row.nil? && !mime.empty?
+    #  content_type mime
+    #  return row['data']
+    #end
+
+    path = "/home/isucon/isubata/webapp/public/icons/#{file_name}"
+    if path
+       return File.read(path)
     end
     404
   end
