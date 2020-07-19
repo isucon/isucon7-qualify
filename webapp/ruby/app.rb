@@ -302,9 +302,8 @@ class App < Sinatra::Base
         avatar_data = data
 
         # 画像保存をファイルシステムに変更
-	path = '/home/isucon/isubata/webapp/public/icons/#{avatar_name}'
-        f = File.open(path)
-        f.write(avatar_data) unless f.exists?(path)
+	path = File.join("/home/isucon/isubata/webapp/public/icons/", avatar_name)
+        File.write(path, avatar_data) unless File.exists?(path)
       end
     end
 
