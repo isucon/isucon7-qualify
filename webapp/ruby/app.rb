@@ -121,16 +121,18 @@ class App < Sinatra::Base
     last_message_id = params[:last_message_id].to_i
     statement = db.prepare('SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100')
     rows = statement.execute(last_message_id, channel_id).to_a
+    users = get_users(rows.map { |r| r['user_id'] }.uniq)
     response = []
     rows.each do |row|
       r = {}
       r['id'] = row['id']
-      statement = db.prepare('SELECT name, display_name, avatar_icon FROM user WHERE id = ?')
-      r['user'] = statement.execute(row['user_id']).first
+      #statement = db.prepare('SELECT name, display_name, avatar_icon FROM user WHERE id = ?')
+      #r['user'] = statement.execute(row['user_id']).first
+      r['user'] = users[row['user_id']]
       r['date'] = row['created_at'].strftime("%Y/%m/%d %H:%M:%S")
       r['content'] = row['content']
       response << r
-      statement.close
+      #statement.close
     end
     response.reverse!
 
@@ -199,16 +201,18 @@ class App < Sinatra::Base
     statement = db.prepare('SELECT * FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT ? OFFSET ?')
     rows = statement.execute(@channel_id, n, (@page - 1) * n).to_a
     statement.close
+    #users = get_users(rows.map { |r| r['user_id'] }.uniq)
     @messages = []
     rows.each do |row|
       r = {}
       r['id'] = row['id']
       statement = db.prepare('SELECT name, display_name, avatar_icon FROM user WHERE id = ?')
       r['user'] = statement.execute(row['user_id']).first
+      #r['user'] = users[row['user_id']] # statement.execute(row['user_id']).first
       r['date'] = row['created_at'].strftime("%Y/%m/%d %H:%M:%S")
       r['content'] = row['content']
       @messages << r
-      statement.close
+      #statement.close
     end
     @messages.reverse!
 
@@ -423,5 +427,16 @@ class App < Sinatra::Base
       return 'image/gif'
     end
     ''
+  end
+
+  def get_users(ids)
+    rows = db.query("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (#{ids.join(',')})")
+
+    dict = {}
+    rows.each do |row|
+      dict[row['id']] = row.select { |k, v| %w[name display_name avatar_icon].include?(k) }
+    end
+
+    dict
   end
 end
