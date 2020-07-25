@@ -32,6 +32,49 @@ class App < Sinatra::Base
 
       @_user
     end
+
+    def redis
+	@redis ||= Redis.current
+    end
+
+    def all_channel_ids_key
+	"all_channele_ids_key"
+    end
+
+    def get_all_channel_ids
+	ids_json = redis.get(all_channel_ids_key)
+	if ids_json
+	   JSON.parse(ids_json)
+	else
+	   set_all_channel_ids	
+	end
+    end
+
+    def set_all_channel_ids
+	ids = db.query('SELECT id FROM channel').to_a.map{|row| row['id']}
+	redis.set(all_channel_ids_key, ids.to_json)
+	ids
+    end
+
+    def all_channels_order_by_id_key
+	"all_channels_order_by_id"
+    end
+
+    def get_all_channels_order_by_id
+      rows = redis.zrange(all_channels_order_by_id_key, 0, -1)
+      if rows.length == 0
+        set_all_channels_order_by_id
+      else
+        rows.map {|row| JSON.parse(row) }
+      end
+    end
+
+    def set_all_channels_order_by_id
+      channels = db.query('SELECT * FROM channel ORDER BY id').to_a
+      redis.zadd(all_channels_order_by_id_key, channels.map{ |c| [c['id'], c.to_json] })
+      channels
+    end
+
   end
 
   get '/initialize' do
@@ -40,6 +83,12 @@ class App < Sinatra::Base
     db.query("DELETE FROM channel WHERE id > 10")
     db.query("DELETE FROM message WHERE id > 10000")
     db.query("DELETE FROM haveread")
+
+    redis.flushall
+
+    channel_count = db.prepare('SELECT channel_id, COUNT(*) AS cnt FROM message GROUP BY channel_id').execute
+    redis.mset channel_count.map{|h| ["channle_message_count:#{h[:channel_id]}", h[:cnt]]}.flatten
+
     204
   end
 
@@ -161,6 +210,9 @@ class App < Sinatra::Base
 
     rows = db.query('SELECT id FROM channel').to_a
     channel_ids = rows.map { |row| row['id'] }
+    #channel_ids = get_all_channel_ids
+    
+
 
     res = []
     channel_ids.each do |channel_id|
@@ -170,9 +222,11 @@ class App < Sinatra::Base
       r = {}
       r['channel_id'] = channel_id
       r['unread'] = if row.nil?
+	# N+1
         statement = db.prepare('SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?')
         statement.execute(channel_id).first['cnt']
       else
+	# N+1
         statement = db.prepare('SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id')
         statement.execute(channel_id, row['message_id']).first['cnt']
       end
@@ -272,6 +326,23 @@ class App < Sinatra::Base
     statement.execute(name, description)
     channel_id = db.last_id
     statement.close
+
+    #_channel, id = redis.zrange(all_channels_order_by_id_key, -1, -1, with_scores: true).last
+    #new_id = id.to_i + 1
+    #now = Time.now
+    #attributes = {
+    #  'id': new_id,
+    #  'name': name,
+    #  'description': description,
+    #  'updated_at': now.to_s,
+    #  'created_at': now.to_s,
+    #}
+
+    #redis.zadd(all_channels_order_by_id_key, [new_id, attributes.to_json])
+    #ids = get_all_channel_ids << new_id
+    #redis.set(all_channel_ids_key, ids)
+
+    
     redirect "/channel/#{channel_id}", 303
   end
 
@@ -412,6 +483,8 @@ class App < Sinatra::Base
   def get_channel_list_info(focus_channel_id = nil)
     #channels = db.query('SELECT * FROM channel ORDER BY id').to_a
     @channel_list ||= db.query('SELECT * FROM channel ORDER BY id').to_a
+    #channels = get_all_channels_order_by_id
+
     if focus_channel_id
 	statement = db.prepare('SELECT description FROM channel WHERE id = ? LIMIT 1')
     	description = statement.execute(focus_channel_id.to_i).first['description']
