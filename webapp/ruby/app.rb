@@ -3,6 +3,7 @@ require 'mysql2'
 require 'sinatra/base'
 
 class App < Sinatra::Base
+
   configure do
     set :session_secret, 'tonymoris'
     set :public_folder, File.expand_path('../../public', __FILE__)
@@ -31,6 +32,49 @@ class App < Sinatra::Base
 
       @_user
     end
+
+    def redis
+	@redis ||= Redis.current
+    end
+
+    def all_channel_ids_key
+	"all_channele_ids_key"
+    end
+
+    def get_all_channel_ids
+	ids_json = redis.get(all_channel_ids_key)
+	if ids_json
+	   JSON.parse(ids_json)
+	else
+	   set_all_channel_ids	
+	end
+    end
+
+    def set_all_channel_ids
+	ids = db.query('SELECT id FROM channel').to_a.map{|row| row['id']}
+	redis.set(all_channel_ids_key, ids.to_json)
+	ids
+    end
+
+    def all_channels_order_by_id_key
+	"all_channels_order_by_id"
+    end
+
+    def get_all_channels_order_by_id
+      rows = redis.zrange(all_channels_order_by_id_key, 0, -1)
+      if rows.length == 0
+        set_all_channels_order_by_id
+      else
+        rows.map {|row| JSON.parse(row) }
+      end
+    end
+
+    def set_all_channels_order_by_id
+      channels = db.query('SELECT * FROM channel ORDER BY id').to_a
+      redis.zadd(all_channels_order_by_id_key, channels.map{ |c| [c['id'], c.to_json] })
+      channels
+    end
+
   end
 
   get '/initialize' do
@@ -39,6 +83,12 @@ class App < Sinatra::Base
     db.query("DELETE FROM channel WHERE id > 10")
     db.query("DELETE FROM message WHERE id > 10000")
     db.query("DELETE FROM haveread")
+
+    redis.flushall
+
+    channel_count = db.prepare('SELECT channel_id, COUNT(*) AS cnt FROM message GROUP BY channel_id').execute
+    redis.mset channel_count.map{|h| ["channle_message_count:#{h[:channel_id]}", h[:cnt]]}.flatten
+
     204
   end
 
@@ -87,6 +137,7 @@ class App < Sinatra::Base
     name = params[:name]
     statement = db.prepare('SELECT * FROM user WHERE name = ?')
     row = statement.execute(name).first
+    statement.close
     if row.nil? || row['password'] != Digest::SHA1.hexdigest(row['salt'] + params[:password])
       return 403
     end
@@ -120,16 +171,19 @@ class App < Sinatra::Base
     last_message_id = params[:last_message_id].to_i
     statement = db.prepare('SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100')
     rows = statement.execute(last_message_id, channel_id).to_a
+    statement.close
+    users = get_users(rows.map { |r| r['user_id'] }.uniq)
     response = []
     rows.each do |row|
       r = {}
       r['id'] = row['id']
-      statement = db.prepare('SELECT name, display_name, avatar_icon FROM user WHERE id = ?')
-      r['user'] = statement.execute(row['user_id']).first
+      #statement = db.prepare('SELECT name, display_name, avatar_icon FROM user WHERE id = ?')
+      #r['user'] = statement.execute(row['user_id']).first
+      r['user'] = users[row['user_id']]
       r['date'] = row['created_at'].strftime("%Y/%m/%d %H:%M:%S")
       r['content'] = row['content']
       response << r
-      statement.close
+      #statement.close
     end
     response.reverse!
 
@@ -140,6 +194,7 @@ class App < Sinatra::Base
       'ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()',
     ].join)
     statement.execute(user_id, channel_id, max_message_id, max_message_id)
+    statement.close
 
     content_type :json
     response.to_json
@@ -155,6 +210,9 @@ class App < Sinatra::Base
 
     rows = db.query('SELECT id FROM channel').to_a
     channel_ids = rows.map { |row| row['id'] }
+    #channel_ids = get_all_channel_ids
+    
+
 
     res = []
     channel_ids.each do |channel_id|
@@ -164,9 +222,11 @@ class App < Sinatra::Base
       r = {}
       r['channel_id'] = channel_id
       r['unread'] = if row.nil?
+	# N+1
         statement = db.prepare('SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?')
         statement.execute(channel_id).first['cnt']
       else
+	# N+1
         statement = db.prepare('SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id')
         statement.execute(channel_id, row['message_id']).first['cnt']
       end
@@ -208,6 +268,7 @@ class App < Sinatra::Base
       r['content'] = row['content']
       @messages << r
       statement.close
+      #statement.close
     end
     @messages.reverse!
 
@@ -265,6 +326,23 @@ class App < Sinatra::Base
     statement.execute(name, description)
     channel_id = db.last_id
     statement.close
+
+    #_channel, id = redis.zrange(all_channels_order_by_id_key, -1, -1, with_scores: true).last
+    #new_id = id.to_i + 1
+    #now = Time.now
+    #attributes = {
+    #  'id': new_id,
+    #  'name': name,
+    #  'description': description,
+    #  'updated_at': now.to_s,
+    #  'created_at': now.to_s,
+    #}
+
+    #redis.zadd(all_channels_order_by_id_key, [new_id, attributes.to_json])
+    #ids = get_all_channel_ids << new_id
+    #redis.set(all_channel_ids_key, ids)
+
+    
     redirect "/channel/#{channel_id}", 303
   end
 
@@ -299,13 +377,18 @@ class App < Sinatra::Base
 
         avatar_name = digest + ext
         avatar_data = data
+
+        # 画像保存をファイルシステムに変更
+	path = File.join("/home/isucon/isubata/webapp/public/icons/", avatar_name)
+        File.write(path, avatar_data) unless File.exists?(path)
       end
     end
 
+
     if !avatar_name.nil? && !avatar_data.nil?
-      statement = db.prepare('INSERT INTO image (name, data) VALUES (?, ?)')
-      statement.execute(avatar_name, avatar_data)
-      statement.close
+      #statement = db.prepare('INSERT INTO image (name, data) VALUES (?, ?)')
+      #statement.execute(avatar_name, avatar_data)
+      #statement.close
       statement = db.prepare('UPDATE user SET avatar_icon = ? WHERE id = ?')
       statement.execute(avatar_name, user['id'])
       statement.close
@@ -320,16 +403,31 @@ class App < Sinatra::Base
     redirect '/', 303
   end
 
+  post'/dump/icons' do
+    rows = db.query('SELECT `name`, `data` FROM `image`')
+
+    rows.each do |row|
+      File.write("/home/isucon/isubata/webapp/public/icons/#{row['name']}", row['data'])
+    end
+
+    redirect '/'
+  end
+
   get '/icons/:file_name' do
     file_name = params[:file_name]
-    statement = db.prepare('SELECT * FROM image WHERE name = ?')
-    row = statement.execute(file_name).first
-    statement.close
-    ext = file_name.include?('.') ? File.extname(file_name) : ''
-    mime = ext2mime(ext)
-    if !row.nil? && !mime.empty?
-      content_type mime
-      return row['data']
+    #statement = db.prepare('SELECT * FROM image WHERE name = ?')
+    #row = statement.execute(file_name).first
+    #statement.close
+    #ext = file_name.include?('.') ? File.extname(file_name) : ''
+    #mime = ext2mime(ext)
+    #if !row.nil? && !mime.empty?
+    #  content_type mime
+    #  return row['data']
+    #end
+
+    path = "/home/isucon/isubata/webapp/public/icons/#{file_name}"
+    if path
+       return File.read(path)
     end
     404
   end
@@ -337,18 +435,21 @@ class App < Sinatra::Base
   private
 
   def db
-    return @db_client if defined?(@db_client)
+    #return @db_client if defined?(@db_client)
 
-    @db_client = Mysql2::Client.new(
+    #@db_client = Mysql2::Client.new(
+    Thread.current[:isubata_db] ||= Mysql2::Client.new(
       host: ENV.fetch('ISUBATA_DB_HOST') { 'localhost' },
       port: ENV.fetch('ISUBATA_DB_PORT') { '3306' },
       username: ENV.fetch('ISUBATA_DB_USER') { 'root' },
       password: ENV.fetch('ISUBATA_DB_PASSWORD') { '' },
       database: 'isubata',
-      encoding: 'utf8mb4'
+      encoding: 'utf8mb4',
+      reconnect: true,
+      init_command: %q!SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'!
     )
-    @db_client.query('SET SESSION sql_mode=\'TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY\'')
-    @db_client
+    #@db_client.query('SET SESSION sql_mode=\'TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY\'')
+    #@db_client
   end
 
   def db_get_user(user_id)
@@ -380,15 +481,16 @@ class App < Sinatra::Base
   end
 
   def get_channel_list_info(focus_channel_id = nil)
-    channels = db.query('SELECT * FROM channel ORDER BY id').to_a
-    description = ''
-    channels.each do |channel|
-      if channel['id'] == focus_channel_id
-        description = channel['description']
-        break
-      end
+    #channels = db.query('SELECT * FROM channel ORDER BY id').to_a
+    @channel_list ||= db.query('SELECT * FROM channel ORDER BY id').to_a
+    #channels = get_all_channels_order_by_id
+
+    if focus_channel_id
+	statement = db.prepare('SELECT description FROM channel WHERE id = ? LIMIT 1')
+    	description = statement.execute(focus_channel_id.to_i).first['description']
+	statement.close
     end
-    [channels, description]
+    [@channel_list, description]
   end
 
   def ext2mime(ext)
@@ -402,5 +504,16 @@ class App < Sinatra::Base
       return 'image/gif'
     end
     ''
+  end
+
+  def get_users(ids)
+    rows = db.query("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (#{ids.join(',')})")
+
+    dict = {}
+    rows.each do |row|
+      dict[row['id']] = row.select { |k, v| %w[name display_name avatar_icon].include?(k) }
+    end
+
+    dict
   end
 end
