@@ -71,7 +71,6 @@ func writeFile(filename string, data []byte) error {
 }
 
 type Image struct {
-	ID   int64  `db:"id"`
 	Name string `db:"name"`
 	Data []byte `db:"data"`
 }
@@ -83,7 +82,7 @@ func main() {
 	}
 
 	image := Image{}
-	rows, err := db.Queryx("SELECT * FROM image LIMIT 10")
+	rows, err := db.Queryx("SELECT DISTINCT name, data FROM image")
 	if err != nil {
 		log.Println(err)
 	}
