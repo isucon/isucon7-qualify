@@ -48,7 +48,7 @@ func writeFile(filename string, data []byte) error {
 		return err
 	}
 
-	out, _ := os.Create(filename)
+	out, _ := os.Create("icons/" + filename)
 	defer out.Close()
 
 	switch true {
@@ -92,7 +92,6 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		log.Println(image.Name)
 
 		err = writeFile(image.Name, image.Data)
 		if err != nil {
