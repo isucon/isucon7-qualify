@@ -40,7 +40,7 @@ func writeFile(filename string, data []byte) error {
 	out, _ := os.Create("icons/" + filename)
 	defer out.Close()
 
-	_, err = out.Write(data)
+	_, err := out.Write(data)
 	return err
 }
 
