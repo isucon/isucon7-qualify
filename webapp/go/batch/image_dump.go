@@ -1,15 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"image"
-	"image/gif"
-	"image/jpeg"
-	"image/png"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -43,31 +37,11 @@ func init_db() (*sqlx.DB, error) {
 }
 
 func writeFile(filename string, data []byte) error {
-	img, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-
 	out, _ := os.Create("icons/" + filename)
 	defer out.Close()
 
-	switch true {
-	case strings.HasSuffix(filename, ".jpg"), strings.HasSuffix(filename, ".jpeg"):
-		var opts jpeg.Options
-		opts.Quality = 1
-		err = jpeg.Encode(out, img, &opts)
-	case strings.HasSuffix(filename, ".png"):
-		err = png.Encode(out, img)
-	case strings.HasSuffix(filename, ".gif"):
-		err = gif.Encode(out, img, nil)
-	default:
-		log.Println("Other file type:", filename)
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err = out.Write(data)
+	return err
 }
 
 type Image struct {
