@@ -662,10 +662,18 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		//		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		//		if err != nil {
+		//			return err
+		//		}
+		out, _ := os.Create("../public/icons/" + avatarName)
+		defer out.Close()
+
+		_, err := out.Write(avatarData)
 		if err != nil {
 			return err
 		}
+
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
 			return err
