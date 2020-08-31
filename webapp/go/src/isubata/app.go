@@ -442,7 +442,7 @@ func fetchUnread(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	time.Sleep(time.Second)
+	//time.Sleep(time.Second)
 
 	channels, err := queryChannels()
 	if err != nil {
