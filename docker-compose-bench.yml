@@ -1,0 +1,6 @@
+version: '3'
+services:
+  bench:
+    build:
+      context: ./bench
+    command: [-remotes, 127.0.0.1]
