@@ -406,7 +406,7 @@ func getMessage(c echo.Context) error {
 		_, err := db.Exec("INSERT INTO yondakazu (user_id, channel_id, yonda_kazu)"+
 			" VALUES (?, ?, ?)"+
 			" ON DUPLICATE KEY UPDATE yonda_kazu = ?",
-			userID, chanID, cnt)
+			userID, chanID, cnt, cnt)
 		if err != nil {
 			return err
 		}
