@@ -39,3 +39,10 @@ CREATE TABLE haveread (
   created_at DATETIME NOT NULL,
   PRIMARY KEY(user_id, channel_id)
 ) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE yondakazu (
+  user_id BIGINT NOT NULL,
+  channel_id BIGINT NOT NULL,
+  yonda_kazu BIGINT,
+  PRIMARY KEY(user_id, channel_id)
+) Engine=InnoDB DEFAULT CHARSET=utf8mb4;

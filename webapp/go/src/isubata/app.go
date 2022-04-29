@@ -436,6 +436,25 @@ func queryHaveRead(userID, chID int64) (int64, error) {
 	return h.MessageID, nil
 }
 
+func queryYondakazu(userID, chID int64) (int64, error) {
+	type Yondakazu struct {
+		UserID    int64 `db:"user_id"`
+		ChannelID int64 `db:"channel_id"`
+		Yondakazu int64 `db:"yonda_kazu"`
+	}
+	h := Yondakazu{}
+
+	err := db.Get(&h, "SELECT yonda_kazu FROM yondakazu WHERE user_id = ? AND channel_id = ?",
+		userID, chID)
+
+	if err == sql.ErrNoRows {
+		return 0, nil
+	} else if err != nil {
+		return 0, err
+	}
+	return h.Yondakazu, nil
+}
+
 func fetchUnread(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
@@ -452,27 +471,20 @@ func fetchUnread(c echo.Context) error {
 	resp := []map[string]interface{}{}
 
 	for _, chID := range channels {
-		lastID, err := queryHaveRead(userID, chID)
+		// lastID, err := queryHaveRead(userID, chID)
+		readed, err := queryYondakazu(userID, chID)
 		if err != nil {
 			return err
 		}
 
 		var cnt int64
-		if lastID > 0 {
-			err = db.Get(&cnt,
-				"SELECT COUNT(1) as cnt FROM message WHERE channel_id = ? AND ? < id",
-				chID, lastID)
-		} else {
-			err = db.Get(&cnt,
-				"SELECT COUNT(1) as cnt FROM message WHERE channel_id = ?",
-				chID)
-		}
+		err = db.Get(&cnt, "SELECT COUNT(1) as cnt FROM message")
 		if err != nil {
 			return err
 		}
 		r := map[string]interface{}{
 			"channel_id": chID,
-			"unread":     cnt}
+			"unread":     cnt - readed}
 		resp = append(resp, r)
 	}
 
