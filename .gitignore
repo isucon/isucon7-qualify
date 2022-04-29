@@ -7,3 +7,6 @@ webapp/php/vendor
 bench/isucon7q-initial-dataset.sql.gz
 bench/result.json
 webapp/perl/local
+
+/tools/image_outupt_tool/images/*
+!/tools/image_outupt_tool/images/.gitkeep
