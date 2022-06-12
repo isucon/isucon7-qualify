@@ -1,0 +1,72 @@
+version: '3'
+services:
+  bench:
+    build:
+      context: .
+      dockerfile: benchDockerfile
+      # args:
+      #   GIT_URL: https://github.com/isucon/isucon7-qualify.git
+    image: isucon7-qualifier-bench
+    depends_on:
+      - web
+    networks:
+      - frontend
+  web:
+    build:
+      context: .
+      dockerfile: webDockerfile
+      # args:
+      #   GIT_URL: https://github.com/isucon/isucon7-qualify.git
+    image: isucon7-qualifier-web:nginx
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+  app:
+    build:
+      context: .
+      dockerfile: appDockerfile
+      #context: ./docker/app/nodejs
+      #context: ./docker/app/perl
+      #context: ./docker/app/python
+      #context: ./docker/app/ruby
+      # args:
+      #   GIT_URL: https://github.com/isucon/isucon7-qualify.git
+    image: isucon7-qualifier-app:golang
+    #image: isucon7-qualifier-app:nodejs
+    #image: isucon7-qualifier-app:perl
+    #image: isucon7-qualifier-app:python
+    #image: isucon7-qualifier-app:ruby
+    networks:
+      - backend
+    depends_on:
+      - db
+    ports:
+      - "5000"
+    environment:
+      ISUBATA_DB_USER: isucon
+      ISUBATA_DB_PASSWORD: isucon
+      ISUBATA_DB_HOST: db
+  db:
+    build:
+      context: .
+      dockerfile: dbDockerfile
+      # args:
+      #   GIT_URL: https://github.com/isucon/isucon7-qualify.git
+    image: isucon7-qualifier-db
+    ports:
+      - "3306:3306"
+    networks:
+      - backend
+    command: ["--character-set-server=utf8mb4"]
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      #MYSQL_DATABASE: isubata
+      #MYSQL_USER: isucon
+      #MYSQL_PASSWORD: isucon
+networks:
+  frontend:
+  backend:

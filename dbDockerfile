@@ -1,0 +1,27 @@
+FROM golang:1.9 AS build-dev
+
+# ARG GIT_URL=https://github.com/ksk-jp/isucon7-qualify.git
+COPY ./bench/ /home/isucon/isubata/bench
+COPY ./db/ /home/isucon/isubata/db
+
+RUN \
+  cd /home/isucon/isubata/bench && \
+  go get github.com/constabulary/gb/... && \
+  gb vendor restore && \
+  make && \
+  bin/gen-initial-dataset
+
+# M1Macのため、mysql/mysql-server:5.7を利用する
+# FROM mysql:5.7
+FROM mysql/mysql-server:5.7
+
+ENV MYSQL_ALLOW_EMPTY_PASSWORD=yes MYSQL_DATABASE=isubata MYSQL_USER=isucon MYSQL_PASSWORD=isucon
+
+COPY --from=build-dev /home/isucon/isubata/db/isubata.sql /docker-entrypoint-initdb.d/01_isubata.sql
+
+COPY --from=build-dev /home/isucon/isubata/bench/isucon7q-initial-dataset.sql.gz /docker-entrypoint-initdb.d/isucon7q-initial-dataset.sql.gz 
+RUN yum install gzip -y
+RUN gzip -d /docker-entrypoint-initdb.d/isucon7q-initial-dataset.sql.gz 
+
+
+CMD ["--character-set-server=utf8mb4"]

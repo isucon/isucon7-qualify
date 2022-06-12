@@ -1,0 +1,11 @@
+FROM golang:1.9
+
+ARG GIT_URL=https://github.com/ksk-jp/isucon7-qualify.git
+
+COPY webapp/go/ /home/isucon/isubata/webapp/go
+WORKDIR /home/isucon/isubata/webapp/go
+RUN make
+
+EXPOSE 5000
+
+ENTRYPOINT ["/home/isucon/isubata/webapp/go/isubata"]
