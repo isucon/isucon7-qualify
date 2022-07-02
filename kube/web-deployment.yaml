@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: isucon-7-web
+  labels:
+    app: isucon-7
+spec:
+  selector:
+    matchLabels:
+      app: isucon-7
+      tier: web
+  template:
+    metadata:
+      labels:
+        app: isucon-7
+        tier: web
+    spec:
+      containers:
+        - image: k8s/isucon-7-web:v1.0.0
+          name: web
+          env:
+            - name: ISUBATA_DB_USER
+              value: isucon
+            - name: ISUBATA_DB_PASSWORD
+              value: isucon
+            - name: ISUBATA_DB_HOST
+              value: isucon-7-app # appのservice.metadata.name
+          ports:
+            - containerPort: 80
+              name: web

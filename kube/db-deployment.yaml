@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: isucon-7-db
+  labels:
+    app: isucon-7
+spec:
+  selector:
+    matchLabels:
+      app: isucon-7
+      tier: db
+  template:
+    metadata:
+      labels:
+        app: isucon-7
+        tier: db
+    spec:
+      containers:
+        - image: k8s/isucon-7-db:v1.0.0
+          name: db
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: password
+            - name: MYSQL_ROOT_HOST
+              value: "%"
+          ports:
+            - containerPort: 3306
+              name: db

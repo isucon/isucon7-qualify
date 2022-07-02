@@ -1,0 +1,12 @@
+apiVersion: v1 # apply時に使用するAPIの種別。kindによって決まる
+kind: Service # Serviceリソースのマニフェスト
+metadata:
+  name: isucon-7-app
+  labels:
+    app: isucon-7
+spec:
+  ports:
+    - port: 5000
+  selector:
+    app: isucon-7
+    tier: app

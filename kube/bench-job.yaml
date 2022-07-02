@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: isucon-7-bench
+spec:
+  template:
+    spec:
+      containers:
+        - image: k8s/isucon-7-bench:v1.0.0
+          name: bench
+          command: ["bin/bench", "-remotes", "isucon-7-web"]
+      restartPolicy: Never
+  backoffLimit: 4
